@@ -130,6 +130,7 @@ set (sources
         solvers/arnoldi/smod_arpack_general.f08
         solvers/arnoldi/smod_arpack_shift_invert.f08
         solvers/smod_inverse_iteration.f08
+        solvers/mod_iv_solvers.f08
         eigenfunctions/mod_eigenfunctions.f08
         eigenfunctions/mod_ef_assembly.f08
         eigenfunctions/mod_base_efs.f08

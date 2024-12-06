@@ -1,0 +1,148 @@
+! NOTE (AK): ./test_legolas -f mod_test_iv
+module mod_test_iv_solvers
+  use mod_suite_utils
+  use funit
+  use mod_logging, only: str
+  use mod_banded_matrix, only: banded_matrix_t, new_banded_matrix
+  use mod_transform_matrix, only: array_to_banded, banded_to_array
+  use mod_matrix_structure, only: matrix_t, new_matrix
+  use mod_iv_solvers, only: solve_ivp
+  implicit none
+
+  ! Matrices
+  complex(8) :: matrix_A(2, 2)
+  complex(8) :: matrix_B(2, 2)
+  complex(8), allocatable :: hist(:,:)
+
+  ! Initial condition
+  complex(8) :: x0(2)
+
+  ! Solver params
+  real, parameter :: dt = 0.1
+  real, parameter :: t_end = 1.0
+
+  ! Other
+  integer :: i, j, num_steps
+
+contains
+
+  @before
+  subroutine init_test()
+    call reset_globals()
+    call logger%set_logging_level(3)
+    
+    ! Create the matrices
+    matrix_A = reshape([-2.0, 0.0, 0.0, -3.0], shape(matrix_A))    ! non-stiff 2x2
+    matrix_B = reshape([1.0, 0.0, 0.0, 1.0], shape(matrix_B))
+
+    ! Initial condition
+    x0 = [1.0, 2.0]
+
+    ! Rank 2 array for saving history
+    num_steps = nint(t_end / dt)
+    allocate(hist(num_steps, size(x0)))
+
+  end subroutine init_test
+
+
+  @after
+  subroutine tear_down()
+    call logger%set_logging_level(TEST_LOG_LVL)
+    deallocate(hist)
+  end subroutine tear_down
+
+
+  !> 2x2 uncoupled exponential decay system.
+  !! Run the method for one step. Compare with analytically computed theta-method solution after a single step.
+  !! This will indicate a problem with the time update, linear solve, or matrix construction.
+  @test
+  subroutine test_exp_decay_onestep()
+    complex(8), dimension(2) :: actual = [0.9/1.1, (2-0.3)/(1+0.15)]  ! this is the theta solution after 1 step
+    call set_name("theta method test -- exponential decay one step")
+
+    call solve_ivp(matrix_A, matrix_B, x0, 0.1, 0.1)
+    @assertEqual(actual, x0, tolerance = 1e-4)
+  end subroutine test_exp_decay_onestep
+
+  
+  !> Test the convergence rate of the 2x2 system.
+  !! NOTE (AK): This is really an integration test and is probably brittle, so I will disable it eventually.
+  @test
+  subroutine test_exp_decay_convergence()
+    complex(8) :: err(4, 2)  ! save errors
+    complex(8) :: p(3, 2)    ! compute order for each change in stepsize
+    complex(8), dimension(2) :: actual = [exp(-2.0), 2*exp(-3.0)]  ! actual solution at t=1
+    real, dimension(4) :: timesteps = [0.2, 0.1, 0.05, 0.025]
+    call set_name("theta method test -- convergence test")
+
+    ! Run with 4 different stepsizes
+    do i = 1,4
+      x0 = [1.0, 2.0]
+      call solve_ivp(matrix_A, matrix_B, x0, timesteps(i), 1.0)
+      err(i, :) = abs(x0 - actual)
+    end do
+
+    ! Compute the order p
+    do i = 1,3
+      p(i,:) = log(err(i+1,:)/err(i,:))/log(0.5)
+    end do
+
+    @assertEqual(reshape([(cmplx(2.0_dp, 0.0_dp, kind=dp), i=1,6)], shape=[3,2]), p, tolerance = 1e-1)
+  end subroutine test_exp_decay_convergence
+
+
+  ! ===========================================================================
+
+  !> Helper routine for logging matrices nicely to a file.
+  !! Prints the real parts of the entries of a matrix of type COMPLEX(8)
+  subroutine log_matrix(matrix, rows, cols, label)
+    complex(8), intent(in) :: matrix(:,:)
+    integer, intent(in) :: rows, cols
+    character(len=*), intent(in), optional :: label
+    integer :: i, j
+    integer :: log_unit = 10  ! Arbitrary unit number for logging
+
+    open(log_unit, file="matrix_log.txt", status="unknown")
+    if (present(label)) then
+        write(log_unit,*) "Matrix: ", trim(label)
+    else
+        write(log_unit,*) "Matrix:"
+    end if
+
+    ! Print the matrix row by row
+    do i = 1, rows
+      ! write(log_unit, "(A, I3, A)", advance="no") "Row ", i, ": "
+      do j = 1, cols
+        write(log_unit, "(F10.4)", advance="no") real(matrix(i, j))
+      end do
+      write(log_unit,*)  ! End the row
+    end do
+
+    close(log_unit)
+  end subroutine log_matrix
+
+
+  subroutine log_vector(vector, length, label)
+    complex(8), intent(in) :: vector(:)
+    integer, intent(in) :: length
+    character(len=*), intent(in), optional :: label
+    integer :: i
+    integer :: log_unit = 10  ! Arbitrary unit number for logging
+
+    open(log_unit, file="matrix_log.txt", status="unknown")
+    if (present(label)) then
+        write(log_unit,*) "Vector: ", trim(label)
+    else
+        write(log_unit,*) "Vector:"
+    end if
+
+    do i = 1, length
+      write(log_unit, "(F10.4)", advance="no") real(vector(i))
+    end do
+
+    close(log_unit)
+
+  end subroutine log_vector
+
+
+end module mod_test_iv_solvers

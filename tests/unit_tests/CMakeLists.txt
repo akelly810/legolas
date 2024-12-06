@@ -99,6 +99,7 @@ set( test_sources
         mod_test_integration.pf
         mod_test_inspections.pf
         mod_test_solar_atmosphere.pf
+        mod_test_iv_solvers.pf
 )
 add_pfunit_ctest (test_legolas
         TEST_SOURCES ${test_sources}
