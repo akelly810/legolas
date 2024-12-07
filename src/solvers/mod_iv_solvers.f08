@@ -11,43 +11,114 @@ module mod_iv_solvers
   use mod_banded_matrix, only: banded_matrix_t, new_banded_matrix
   use mod_banded_operations, only: multiply
   use mod_linear_systems, only: solve_linear_system_complex_banded
-  use mod_transform_matrix, only: array_to_banded
+  use mod_transform_matrix, only: array_to_banded, banded_to_array, matrix_to_banded
   implicit none
 
   real, parameter :: alpha = 0.5  ! trapezoidal method param
   integer         :: num_steps    ! number of time steps
 
   integer            :: i       ! loop index
-  integer, parameter :: ku = 1  ! number of superdiagonals
-  integer, parameter :: kl = 1  ! number of subdiagonals   
 
   ! Mx = rhs
-  complex(8), allocatable :: rhs(:)         ! rhs is a vector
-  complex(8), allocatable :: matrix_M(:,:)  ! dense matrix M
-  type(banded_matrix_t) :: M                ! banded matrix
+  ! complex(8), allocatable :: matrix_M(:,:)  ! dense matrix M
 
 contains
 
   !>
   !
-  subroutine solve_ivp(A, B, x, dt, t_end, hist)
-    complex(8), dimension(:,:)              :: A, B            ! FEM matrices
-    complex(8), dimension(:), intent(inout) :: x               ! initial condition, updated with final result
-    real, intent(in)                        :: dt              ! timestep
-    real, intent(in)                        :: t_end           ! end time
-    complex(8), dimension(:,:), optional, intent(out) :: hist  ! save history for plotting (optional)
+  subroutine solve_ivp(matrix_A, matrix_B, x, dt, t_end, hist)
+    !> FEM matrix
+    type(matrix_t)                          :: matrix_A
+    !> FEM matrix
+    type(matrix_t)                          :: matrix_B
+    !> initial condition, gets updated with final result
+    complex(8), dimension(:), intent(inout) :: x
+    !> time step size
+    real, intent(in)                        :: dt
+    !> simulation end time
+    real, intent(in)                        :: t_end
+    !> save history for plotting (optional)
+    complex(8), dimension(:,:), optional, intent(out) :: hist
 
-    ! Data setup
+    type(banded_matrix_t) :: A, B, M
+    integer :: A_ku, A_kl  ! # upper diagonals, # lower diagonals
+    integer :: B_ku, B_kl
+    complex(dp) :: beta, gamma
+    complex(dp), allocatable :: z(:)
+    complex(dp), allocatable :: rhs(:)
+    integer :: n
+
+    ! check input sanity
+    if (.not. (matrix_A%matrix_dim == matrix_B%matrix_dim)) then
+      call logger%error("A or B not square, or not compatible")
+      return
+    end if
+
+    call matrix_A%get_nb_diagonals(ku=A_ku, kl=A_kl)
+    call matrix_B%get_nb_diagonals(ku=B_ku, kl=B_kl)
+
+    ! We will only work with banded matrices
+    call matrix_to_banded(matrix_A, A_kl, A_ku, A)
+    call matrix_to_banded(matrix_B, B_kl, B_ku, B)
+
     num_steps = nint(t_end / dt)
     allocate(rhs, mold = x)
-    allocate(matrix_M, mold = A)
+    allocate(z, mold = x)
+    M = new_banded_matrix(B%m, B%n, B%kl, B%ku)
+    n = size(x)
 
     ! Trapezoidal (theta) method
-    matrix_M = B - dt * alpha * A                       ! compute M matrix
-    call array_to_banded(matrix_M, kl, ku, M)           ! convert dense to banded
 
-    do i = 1, num_steps
-      rhs = matmul(B + (1 - alpha) * dt * A, x)       ! compute rhs vector
+    ! M = B - dt * alpha * A
+    ! 1. Copy B into M
+    call zcopy(M%get_total_nb_elements(), B%AB, 1, M%AB, 1)
+
+    ! 2. Scale A by (-dt*alpha) and add to M
+    gamma = -dt * alpha
+    M%AB = M%AB + gamma*A%AB
+
+    do i = 1, num_steps      
+      ! Solve this using banded level 2 BLAS operations
+      ! rhs = (B + beta * A)x = Bx + beta * Ax
+      beta = (1 - alpha) * dt  ! scalar
+
+      ! compute rhs=Bx
+      call zgbmv( &
+        'N', &
+        B%m, &
+        B%n, &
+        B%kl, &
+        B%ku, &
+        (1.0_dp, 0.0_dp), &
+        B%AB, &
+        size(B%AB, dim = 1), &
+        x, &
+        1, &
+        (0.0_dp, 0.0_dp), &
+        rhs, &
+        1 &
+      )
+
+      ! compute z=Ax
+      call zgbmv( &
+        'N', &
+        A%m, &
+        A%n, &
+        A%kl, &
+        A%ku, &
+        (1.0_dp, 0.0_dp), &
+        A%AB, &
+        size(A%AB, dim = 1), &
+        x, &
+        1, &
+        (0.0_dp, 0.0_dp), &
+        z, &
+        1 &
+      )
+
+      ! compute rhs = rhs + beta*z
+      call zaxpy(n, beta, z, 1, rhs, 1)
+
       x = solve_linear_system_complex_banded(M, rhs)  ! solve banded system with zgbsv
 
       ! Save in history
@@ -58,7 +129,7 @@ contains
 
     ! Unit tests require deallocation
     deallocate(rhs)
-    deallocate(matrix_M)
+    deallocate(z)
 
   end subroutine solve_ivp
 

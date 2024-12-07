@@ -4,14 +4,13 @@ module mod_test_iv_solvers
   use funit
   use mod_logging, only: str
   use mod_banded_matrix, only: banded_matrix_t, new_banded_matrix
-  use mod_transform_matrix, only: array_to_banded, banded_to_array
+  use mod_transform_matrix, only: array_to_banded, banded_to_array, matrix_to_banded
   use mod_matrix_structure, only: matrix_t, new_matrix
   use mod_iv_solvers, only: solve_ivp
   implicit none
 
   ! Matrices
-  complex(8) :: matrix_A(2, 2)
-  complex(8) :: matrix_B(2, 2)
+  type(matrix_t) :: matrix_A, matrix_B
   complex(8), allocatable :: hist(:,:)
 
   ! Initial condition
@@ -30,10 +29,15 @@ contains
   subroutine init_test()
     call reset_globals()
     call logger%set_logging_level(3)
-    
+
     ! Create the matrices
-    matrix_A = reshape([-2.0, 0.0, 0.0, -3.0], shape(matrix_A))    ! non-stiff 2x2
-    matrix_B = reshape([1.0, 0.0, 0.0, 1.0], shape(matrix_B))
+    matrix_A = new_matrix(2, label="A")
+    call matrix_A%add_element(row=1, column=1, element=-2)
+    call matrix_A%add_element(row=2, column=2, element=-3)
+
+    matrix_B = new_matrix(2, label="B")
+    call matrix_B%add_element(row=1, column=1, element=1)
+    call matrix_B%add_element(row=2, column=2, element=1)
 
     ! Initial condition
     x0 = [1.0, 2.0]
@@ -66,7 +70,7 @@ contains
 
   
   !> Test the convergence rate of the 2x2 system.
-  !! NOTE (AK): This is really an integration test and is probably brittle, so I will disable it eventually.
+  !! NOTE (AK): This is really an integration test, remove it once code is stable.
   @test
   subroutine test_exp_decay_convergence()
     complex(8) :: err(4, 2)  ! save errors
