@@ -11,10 +11,10 @@ module mod_test_iv_solvers
 
   ! Matrices
   type(matrix_t) :: matrix_A, matrix_B
-  complex(8), allocatable :: hist(:,:)
+  complex(dp), allocatable :: hist(:,:)
 
   ! Initial condition
-  complex(8) :: x0(2)
+  complex(dp) :: x0(2)
 
   ! Solver params
   real, parameter :: dt = 0.1
@@ -61,7 +61,7 @@ contains
   !! This will indicate a problem with the time update, linear solve, or matrix construction.
   @test
   subroutine test_exp_decay_onestep()
-    complex(8), dimension(2) :: actual = [0.9/1.1, (2-0.3)/(1+0.15)]  ! this is the theta solution after 1 step
+    complex(dp), dimension(2) :: actual = [0.9/1.1, (2-0.3)/(1+0.15)]  ! this is the theta solution after 1 step
     call set_name("theta method test -- exponential decay one step")
 
     call solve_ivp(matrix_A, matrix_B, x0, 0.1, 0.1)
@@ -73,9 +73,9 @@ contains
   !! NOTE (AK): This is really an integration test, remove it once code is stable.
   @test
   subroutine test_exp_decay_convergence()
-    complex(8) :: err(4, 2)  ! save errors
-    complex(8) :: p(3, 2)    ! compute order for each change in stepsize
-    complex(8), dimension(2) :: actual = [exp(-2.0), 2*exp(-3.0)]  ! actual solution at t=1
+    complex(dp) :: err(4, 2)  ! save errors
+    complex(dp) :: p(3, 2)    ! compute order for each change in stepsize
+    complex(dp), dimension(2) :: actual = [exp(-2.0), 2*exp(-3.0)]  ! actual solution at t=1
     real, dimension(4) :: timesteps = [0.2, 0.1, 0.05, 0.025]
     call set_name("theta method test -- convergence test")
 
@@ -100,7 +100,7 @@ contains
   !> Helper routine for logging matrices nicely to a file.
   !! Prints the real parts of the entries of a matrix of type COMPLEX(8)
   subroutine log_matrix(matrix, rows, cols, label)
-    complex(8), intent(in) :: matrix(:,:)
+    complex(dp), intent(in) :: matrix(:,:)
     integer, intent(in) :: rows, cols
     character(len=*), intent(in), optional :: label
     integer :: i, j
@@ -127,7 +127,7 @@ contains
 
 
   subroutine log_vector(vector, length, label)
-    complex(8), intent(in) :: vector(:)
+    complex(dp), intent(in) :: vector(:)
     integer, intent(in) :: length
     character(len=*), intent(in), optional :: label
     integer :: i

@@ -6,39 +6,32 @@ module mod_iv_solvers
   use mod_logging, only: logger, str
   use mod_settings, only: settings_t
   use mod_matrix_structure, only: matrix_t
-  use mod_global_variables, only: dp, NaN
+  use mod_global_variables, only: dp
 
   use mod_banded_matrix, only: banded_matrix_t, new_banded_matrix
-  use mod_banded_operations, only: multiply
   use mod_linear_systems, only: solve_linear_system_complex_banded
-  use mod_transform_matrix, only: array_to_banded, banded_to_array, matrix_to_banded
+  use mod_transform_matrix, only: matrix_to_banded
   implicit none
 
-  real, parameter :: alpha = 0.5  ! trapezoidal method param
-  integer         :: num_steps    ! number of time steps
-
-  integer            :: i       ! loop index
-
-  ! Mx = rhs
-  ! complex(8), allocatable :: matrix_M(:,:)  ! dense matrix M
+  real, parameter :: alpha = 0.5  ! 0.0/0.5/1.0 for FW Euler / Trapezoidal method / BW Euler
 
 contains
 
-  !>
-  !
+  !> Solve the initial value problem
+  !! (AK) NOTE: Should move some logic out of here and take in a 'settings' object.
   subroutine solve_ivp(matrix_A, matrix_B, x, dt, t_end, hist)
     !> FEM matrix
     type(matrix_t)                          :: matrix_A
     !> FEM matrix
     type(matrix_t)                          :: matrix_B
     !> initial condition, gets updated with final result
-    complex(8), dimension(:), intent(inout) :: x
+    complex(dp), dimension(:), intent(inout) :: x
     !> time step size
     real, intent(in)                        :: dt
     !> simulation end time
     real, intent(in)                        :: t_end
     !> save history for plotting (optional)
-    complex(8), dimension(:,:), optional, intent(out) :: hist
+    complex(dp), dimension(:,:), optional, intent(out) :: hist
 
     type(banded_matrix_t) :: A, B, M
     integer :: A_ku, A_kl  ! # upper diagonals, # lower diagonals
@@ -46,7 +39,9 @@ contains
     complex(dp) :: beta, gamma
     complex(dp), allocatable :: z(:)
     complex(dp), allocatable :: rhs(:)
-    integer :: n
+    integer :: n            ! dimension of A, B, M, x
+    integer :: num_steps    ! number of time steps
+    integer :: i            ! loop index
 
     ! check input sanity
     if (.not. (matrix_A%matrix_dim == matrix_B%matrix_dim)) then
@@ -69,7 +64,7 @@ contains
 
     ! Trapezoidal (theta) method
 
-    ! M = B - dt * alpha * A
+    ! Compute M = B - dt * alpha * A
     ! 1. Copy B into M
     call zcopy(M%get_total_nb_elements(), B%AB, 1, M%AB, 1)
 
@@ -78,11 +73,11 @@ contains
     M%AB = M%AB + gamma*A%AB
 
     do i = 1, num_steps      
-      ! Solve this using banded level 2 BLAS operations
       ! rhs = (B + beta * A)x = Bx + beta * Ax
+      ! compute as 3 banded level 2 BLAS operations
       beta = (1 - alpha) * dt  ! scalar
 
-      ! compute rhs=Bx
+      ! 1. compute rhs=Bx
       call zgbmv( &
         'N', &
         B%m, &
@@ -99,7 +94,7 @@ contains
         1 &
       )
 
-      ! compute z=Ax
+      ! 2. compute z=Ax
       call zgbmv( &
         'N', &
         A%m, &
@@ -116,10 +111,11 @@ contains
         1 &
       )
 
-      ! compute rhs = rhs + beta*z
+      ! 3. compute rhs = rhs + beta*z
       call zaxpy(n, beta, z, 1, rhs, 1)
 
-      x = solve_linear_system_complex_banded(M, rhs)  ! solve banded system with zgbsv
+      ! Solve resulting banded system with zgbsv
+      x = solve_linear_system_complex_banded(M, rhs)
 
       ! Save in history
       if (present(hist)) then
@@ -135,9 +131,9 @@ contains
 
 
   !> Helper routine for logging matrices nicely to a file.
-  !  Prints the real parts of the entries of a matrix of type COMPLEX(8)
+  !  Prints the real parts of the entries of a matrix of type COMPLEX(dp)
   subroutine log_matrix(matrix, rows, cols, label)
-    complex(8), intent(in) :: matrix(:,:)
+    complex(dp), intent(in) :: matrix(:,:)
     integer, intent(in) :: rows, cols
     character(len=*), intent(in), optional :: label
     integer :: i, j
@@ -160,6 +156,6 @@ contains
     end do
 
     close(log_unit)
-end subroutine log_matrix
+  end subroutine log_matrix
 
 end module mod_iv_solvers
