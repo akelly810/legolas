@@ -1,0 +1,46 @@
+! NOTE (AK): ./test_legolas -f mod_test_initial_condition
+module mod_test_initial_condition
+  use mod_suite_utils
+  use funit
+  use mod_logging, only: str, logger
+  use mod_initial_condition, only: generate_ic
+  implicit none
+
+contains
+
+  @before
+  subroutine init_test()
+    call reset_globals()
+    call logger%set_logging_level(3)
+  end subroutine init_test
+
+
+  @after
+  subroutine tear_down()
+    call logger%set_logging_level(TEST_LOG_LVL)
+  end subroutine tear_down
+
+
+  @test
+  subroutine test_something()
+    integer :: i
+    integer :: N = 11
+    real(dp) :: x0(6*11)
+    real(dp) :: nodes(11)
+
+    call set_name("initial condition test")
+
+    nodes = [ (i, i=-5,5) ]
+    x0 = [ (0.0d0, i=1,66) ]
+    call logger%info('x0' // str(x0))
+
+    ! settings_t%state_vector%
+    ! call sv_component%get_spline_function(diff_order, spline_func)
+
+    call generate_ic(N, nodes, x0)
+    call logger%info('x0' // str(x0))
+
+    @assertEqual(1.0, 1.0)
+  end subroutine test_something
+
+end module mod_test_initial_condition

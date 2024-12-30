@@ -2,7 +2,7 @@
 !> Initial value solver
 !!
 !!
-module mod_iv_solvers
+module mod_iv_solver
   use mod_logging, only: logger, str
   use mod_settings, only: settings_t
   use mod_matrix_structure, only: matrix_t
@@ -141,4 +141,4 @@ contains
   end subroutine solve_ivp
 
 
-end module mod_iv_solvers
+end module mod_iv_solver

@@ -1,12 +1,12 @@
-! NOTE (AK): ./test_legolas -f mod_test_iv
-module mod_test_iv_solvers
+! NOTE (AK): ./test_legolas -f mod_test_iv_solver
+module mod_test_iv_solver
   use mod_suite_utils
   use funit
   use mod_logging, only: str
   use mod_banded_matrix, only: banded_matrix_t, new_banded_matrix
   use mod_transform_matrix, only: array_to_banded, banded_to_array, matrix_to_banded
   use mod_matrix_structure, only: matrix_t, new_matrix
-  use mod_iv_solvers, only: solve_ivp
+  use mod_iv_solver, only: solve_ivp
   implicit none
 
   ! Matrices
@@ -149,4 +149,4 @@ contains
   end subroutine log_vector
 
 
-end module mod_test_iv_solvers
+end module mod_test_iv_solver
