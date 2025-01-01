@@ -8,8 +8,14 @@ module mod_initial_condition
   use mod_logging, only: logger, str
   use mod_settings, only: settings_t
   use mod_state_vector_component, only: sv_component_t
-
+  use mod_basis_functions, only: hcubic, hquad, basis_function
+  use mod_grid, only: grid_t
   implicit none
+
+  private
+
+  public :: generate_ic
+  public :: reconstruct_profiles
 
   ! Interface for state vector component profiles
   interface
@@ -76,17 +82,121 @@ contains
   ! Reconstruct profiles on grid from FEM representation
   ! -----------------------------------------------------------------
 
-  subroutine reconstruct_profiles(N, nodes, x, rho, v, T)
-    integer, intent(in) :: N
-    real(dp), intent(in) :: nodes(N)
-    real(dp), intent(in) :: x(6*N)
-    real(dp), intent(out) :: rho(N)
-    real(dp), intent(out) :: v(N)
-    real(dp), intent(out) :: T(N)
+  !>
+  !!
+  !!
+  subroutine reconstruct_profiles(N, nodes, N_fine, x_fine, x0_array, rho_out, v1_out, T_out)
+    ! type(grid_t), intent(in)         :: grid
+    integer, intent(in)              :: N
+    real(dp), intent(in)             :: nodes(N)
+    integer, intent(in)              :: N_fine
+    real(dp), intent(in)             :: x_fine(N_fine)
+    real(dp), intent(in), target     :: x0_array(6*N)
+    ! reconstructed high-res variables for output / plotting
+    real(dp), intent(out)            :: rho_out(N_fine)
+    real(dp), intent(out)            :: v1_out(N_fine)
+    real(dp), intent(out)            :: T_out(N_fine)
 
-    ! do stuff
+    integer :: i
+    real(dp), pointer :: rho_1(:), rho_2(:)
+    real(dp), pointer :: v1_1(:), v1_2(:)
+    real(dp), pointer :: T_1(:), T_2(:)
+
+    ! Extract components from interleaved array
+    rho_1 => x0_array(1:6*N:6)
+    rho_2 => x0_array(2:6*N:6)
+    v1_1  => x0_array(3:6*N:6)
+    v1_2  => x0_array(4:6*N:6)
+    T_1   => x0_array(5:6*N:6)
+    T_2   => x0_array(6:6*N:6)
+
+    ! Zero the array
+    rho_out = 0.0d0
+    v1_out = 0.0d0
+    T_out = 0.0d0
+
+    ! Replace fine grid with ef_grid?
+
+    do i = 1, N_fine
+      rho_out(i) = approximate_u(x_fine(i), N, nodes, rho_1, rho_2, hquad)
+      v1_out(i) = approximate_u(x_fine(i), N, nodes, v1_1, v1_2, hcubic)
+      T_out(i) = approximate_u(x_fine(i), N, nodes, T_1, T_2, hquad)
+    end do
 
   end subroutine reconstruct_profiles
+
+
+  ! -----------------------------------------------------------------
+  ! Reconstruction helper procedures
+  ! -----------------------------------------------------------------
+
+  !>
+  !!
+  pure real(dp) function approximate_u(x, N, nodes, u1, u2, basis_fcn) result(res)
+    !>  
+    real(dp), intent(in) :: x
+    !> 
+    integer, intent(in) :: N
+    !> 
+    real(dp), intent(in) :: nodes(N)
+    !>
+    real(dp), pointer, intent(in) :: u1(:)
+    !>
+    real(dp), pointer, intent(in) :: u2(:)
+    !>
+    procedure(basis_function) :: basis_fcn
+
+    integer  :: i
+    real(dp) :: xL, xR
+    real(dp) :: h(4)
+
+    i = find_element_index(N, x, nodes)
+    ! If x is not in the domain spanned by the nodes, set to 0 and return
+    if (i == 0) then
+      res = 0.0d0
+      return
+    end if
+
+    ! Coordinates of left and right nodes
+    xL = nodes(i)
+    xR = nodes(i+1)
+
+    h = basis_fcn(x, xL, xR)
+
+    res = u1(i + 1) * h(1) + &
+          u1(i)     * h(2) + &
+          u2(i + 1) * h(3) + &
+          u2(i)     * h(4)  
+
+  end function approximate_u
+
+
+
+  !> Find which element interval [x_i, x_{i+1}] contains x.
+  !! Return the index i, or if x is out of range return 0.
+  !! This could probably be made quicker.
+  pure integer function find_element_index(N, x, nodes) result(res)
+    !>
+    integer, intent(in)  :: N
+    !>
+    real(dp), intent(in) :: x
+    !> 
+    real(dp), intent(in) :: nodes(N)
+
+    integer :: i
+    res = 0
+
+    do i = 1, N - 1
+      if (nodes(i) <= x  .and. x <= nodes(i+1)) then
+        res = i
+        return
+      else
+        res = 0
+      end if
+    end do
+
+  end function find_element_index
+
 
   ! -----------------------------------------------------------------
   ! Compute expansion coefficients
@@ -178,7 +288,7 @@ contains
     real(dp), intent(in) :: mean
     real(dp), intent(in) :: std_dev
 
-    gaussian = (1 / (std_dev * sqrt(2*dpi))) * exp(-0.5 * ((x - mean)/std_dev)**2)
+    gaussian = (1.0d0 / (std_dev * sqrt(2.0d0*dpi))) * exp(-0.5d0 * ((x - mean)/std_dev)**2)
 
   end function gaussian
 
