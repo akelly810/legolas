@@ -24,11 +24,13 @@ module mod_iv_state_vector
     integer :: num_components
     integer :: stride
 
-    real(dp), allocatable :: x0(:)  ! FIXME: we need to keep a history of this somehow ..
+    real(dp), allocatable :: x0(:)          ! FIXME: we need to keep a history of this somehow ..
+    complex(dp), allocatable :: x0_cplx(:)  ! FIXME: properly handle real vs complex mixing..
 
     contains
       procedure, public :: initialise_components
       procedure, public :: assemble_iv_array
+      procedure, public :: reassemble_from_block
 
   end type iv_state_vector_t
 
@@ -172,8 +174,17 @@ module mod_iv_state_vector
         end select
       end do
     end do
+
+    ! FIXME: For now, just hold 2 separate arrays.. one for real and one for complex
+    allocate(self%x0_cplx(self%stride * N))
+    self%x0_cplx = cmplx(self%x0, 0.0d0, kind = dp)
   end subroutine assemble_iv_array
 
+
+  subroutine reassemble_from_block(self)
+    class(iv_state_vector_t), intent(inout) :: self
+
+  end subroutine reassemble_from_block
 
 
 end module mod_iv_state_vector

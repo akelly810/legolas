@@ -1,6 +1,7 @@
 module mod_iv_state_vector_component
   use mod_global_variables, only: dp, str_len_arr
   use mod_logging, only: logger
+  use mod_basis_functions, only: basis_function
   use mod_iv_globals, only: profile_fcn
   use mod_state_vector_component, only: sv_component_t
   implicit none
@@ -18,9 +19,11 @@ module mod_iv_state_vector_component
     contains
       procedure, public :: bind_iv_component
       procedure, public :: compute_coeffs
-
       procedure, public :: compute_quad_coeffs
       procedure, public :: compute_cubic_coeffs
+      procedure, public :: reconstruct_profile
+
+      procedure, nopass, private :: find_element_index
 
   end type iv_sv_component_t
 
@@ -63,11 +66,6 @@ contains
     class(iv_sv_component_t), intent(inout) :: self
     integer, intent(in)                     :: N
     real(dp), intent(in)                    :: nodes(N)
-
-    ! TODO: remove.. this will probably be needed in the reconstruct code
-    ! ! Use the parent's public methods to get the basis function pointer
-    ! procedure(basis_function), pointer :: f
-    ! call self%base%get_spline_function(1, f)
 
     ! Compute the coefficients associated to each basis fcn.
     select case(self%base%get_basis_function_name())
@@ -115,5 +113,61 @@ contains
     self%c2 = self%p_dfcn(nodes)
   end subroutine compute_cubic_coeffs
 
+
+  real(dp) function reconstruct_profile(self, x, N, nodes) result(res)
+    class(iv_sv_component_t), intent(inout) :: self
+    real(dp), intent(in) :: x
+    integer, intent(in) :: N
+    real(dp), intent(in) :: nodes(N)
+    
+    procedure(basis_function), pointer :: f
+    integer  :: i
+    real(dp) :: xL, xR
+    real(dp) :: h(4)
+
+    call self%base%get_spline_function(1, f)
+
+    i = find_element_index(N, x, nodes)
+    ! If x is not in the domain spanned by the nodes, set to 0 and return
+    if (i == 0) then
+      res = 0.0d0
+      return
+    end if
+
+    ! Coordinates of left and right nodes
+    xL = nodes(i)
+    xR = nodes(i+1)
+
+    h = f(x, xL, xR)
+
+    res = self%c1(i + 1) * h(1) + &
+          self%c1(i)     * h(2) + &
+          self%c2(i + 1) * h(3) + &
+          self%c2(i)     * h(4)
+
+  end function reconstruct_profile
+
+
+  !> Find which element interval [x_i, x_{i+1}] contains x.
+  !! Return the index i, or if x is out of range return 0.
+  !! Static utility procedure
+  pure integer function find_element_index(N, x, nodes) result(res)
+    integer, intent(in)  :: N
+    real(dp), intent(in) :: x
+    real(dp), intent(in) :: nodes(N)
+
+    integer :: i
+    res = 0
+
+    do i = 1, N - 1
+      if (nodes(i) <= x  .and. x <= nodes(i+1)) then
+        res = i
+        return
+      else
+        res = 0
+      end if
+    end do
+
+  end function find_element_index
 
 end module mod_iv_state_vector_component

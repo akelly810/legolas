@@ -1,6 +1,7 @@
 module mod_iv_module
   use mod_global_variables, only: dp
   use mod_logging, only: logger, str
+  use mod_matrix_structure, only: matrix_t
   use mod_settings, only: settings_t
   use mod_state_vector_component, only: sv_component_t
   use mod_grid, only: grid_t
@@ -15,6 +16,7 @@ module mod_iv_module
     logical, private :: is_initialised
     type(settings_t), pointer, private :: settings
     type(grid_t), pointer, private :: grid
+    type(iv_state_vector_t), private :: state_vec
   contains
 
   procedure, public :: initialise
@@ -41,24 +43,25 @@ contains
   subroutine initialise(self)
     class(iv_module_t), intent(inout) :: self
 
-    type(iv_state_vector_t) :: state_vec
-
     if (self%is_initialised) return
 
     ! Initialise and setup the state vector
-    state_vec = init_and_bind(self%settings%state_vector)
-    call state_vec%initialise_components(self%settings%get_physics_type())
+    self%state_vec = init_and_bind(self%settings%state_vector)
+    call self%state_vec%initialise_components(self%settings%get_physics_type())
 
     ! Assemble the initial value array in block format
-    call state_vec%assemble_iv_array(self%settings%grid%get_gridpts(), self%grid%base_grid)
+    call self%state_vec%assemble_iv_array(self%settings%grid%get_gridpts(), self%grid%base_grid)
 
     self%is_initialised = .true.
   end subroutine initialise
 
 
-  subroutine solve_ivp(self)
+  subroutine solve_ivp(self, matrix_A, matrix_B)
     class(iv_module_t), intent(inout) :: self
+    type(matrix_t) :: matrix_A
+    type(matrix_t) :: matrix_B
 
+    call solve(matrix_A, matrix_B, self%state_vec%x0_cplx, 0.01, 2.0)
 
   end subroutine solve_ivp
 
