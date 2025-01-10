@@ -151,15 +151,12 @@ module mod_iv_state_vector
     real(dp), intent(in) :: nodes(N)
 
     integer :: i, j, idx
-    integer :: stride
 
-    stride = 2 * self%num_components
-
-    ! FIXME: Need to allocate x0 somewhere ...
-    ! allocate(self%x0(N))
+    ! FIXME: Think about this... move somewhere else?
+    allocate(self%x0(self%stride * N))
 
     ! Compute coefficients for each component
-    do i = 1, size(self%components)
+    do i = 1, self%num_components
       call self%components(i)%ptr%compute_coeffs(N, nodes)
     end do
 
@@ -167,14 +164,14 @@ module mod_iv_state_vector
     do i = 1, self%num_components  ! components
       do j = 1, 2                  ! c1 or c2
         idx = 2*(i - 1) + j        ! compute the offset in x0
-         select case(j)
-         case(1)  ! c1
-            self%x0(idx : stride*N : stride) = self%components(i)%ptr%c1
-         case(2)  ! c2
-            self%x0(idx : stride*N : stride) = self%components(i)%ptr%c2
-         end select
+        select case(j)
+          case(1)  ! c1
+            self%x0(idx : self%stride*N : self%stride) = self%components(i)%ptr%c1
+          case(2)  ! c2
+            self%x0(idx : self%stride*N : self%stride) = self%components(i)%ptr%c2
+        end select
       end do
-   end do
+    end do
   end subroutine assemble_iv_array
 
 

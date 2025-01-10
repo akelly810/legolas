@@ -71,9 +71,9 @@ contains
 
     ! Compute the coefficients associated to each basis fcn.
     select case(self%base%get_basis_function_name())
-    case('QUADRATIC')
+    case('quadratic')
       call self%compute_quad_coeffs(N, nodes)
-    case('CUBIC')
+    case('cubic')
       call self%compute_cubic_coeffs(N, nodes)
     end select
   end subroutine compute_coeffs

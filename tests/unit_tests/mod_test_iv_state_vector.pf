@@ -164,9 +164,6 @@ contains
     state_vec%num_components = 2
     state_vec%stride = 2 * state_vec%num_components  ! => 4
 
-    ! Allocate the x0 array used in assemble_iv_array
-    allocate(state_vec%x0(state_vec%stride * N))   ! => length 16
-
     ! Allocate the components array
     allocate(state_vec%components(state_vec%num_components))
 
