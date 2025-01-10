@@ -184,6 +184,11 @@ module mod_iv_state_vector
   subroutine reassemble_from_block(self)
     class(iv_state_vector_t), intent(inout) :: self
 
+    ! Extract components from interleaved array
+
+    ! 
+
+
   end subroutine reassemble_from_block
 
 

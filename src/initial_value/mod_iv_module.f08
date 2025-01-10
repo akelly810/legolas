@@ -21,6 +21,7 @@ module mod_iv_module
 
   procedure, public :: initialise
   procedure, public :: solve_ivp
+  procedure, public :: reconstruct_profiles
 
   end type iv_module_t
 
@@ -61,8 +62,19 @@ contains
     type(matrix_t) :: matrix_A
     type(matrix_t) :: matrix_B
 
+    ! TODO: Control solver parameters
     call solve(matrix_A, matrix_B, self%state_vec%x0_cplx, 0.01, 2.0)
 
   end subroutine solve_ivp
+
+
+  subroutine reconstruct_profiles(self)
+    class(iv_module_t), intent(inout) :: self
+
+    ! TODO: Handle profile reconstruction
+    call self%state_vec%reassemble_from_block()
+    ! ...
+
+  end subroutine reconstruct_profiles
 
 end module mod_iv_module

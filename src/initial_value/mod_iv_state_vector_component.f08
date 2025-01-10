@@ -11,6 +11,7 @@ module mod_iv_state_vector_component
     logical :: is_bound = .false.
 
     real(dp), allocatable :: c1(:), c2(:)  ! coefficients
+    real(dp), allocatable :: profile(:)    ! profile on grid
 
     ! Callback procedure pointers for profile function & derivative
     procedure(profile_fcn), nopass, pointer :: p_fcn  => null()
@@ -23,6 +24,7 @@ module mod_iv_state_vector_component
       procedure, public :: compute_cubic_coeffs
       procedure, public :: reconstruct_profile
 
+      procedure, private :: point_eval
       procedure, nopass, private :: find_element_index
 
   end type iv_sv_component_t
@@ -114,18 +116,38 @@ contains
   end subroutine compute_cubic_coeffs
 
 
-  real(dp) function reconstruct_profile(self, x, N, nodes) result(res)
+  ! TODO: Test this
+  subroutine reconstruct_profile(self, N_fine, x_fine, N, nodes)
     class(iv_sv_component_t), intent(inout) :: self
-    real(dp), intent(in) :: x
+    integer, intent(in) :: N_fine
+    real(dp), intent(in) :: x_fine(N_fine)
     integer, intent(in) :: N
     real(dp), intent(in) :: nodes(N)
     
     procedure(basis_function), pointer :: f
+    integer :: i
+
+    if (allocated(self%profile)) deallocate(self%profile)
+    allocate(self%profile(N))
+
+    call self%base%get_spline_function(1, f)
+
+    do i = 1, N_fine
+      self%profile(i) = self%point_eval(x_fine(i), N, nodes, f)
+    end do
+   
+  end subroutine reconstruct_profile
+
+  pure real(dp) function point_eval(self, x, N, nodes, f) result(res)
+    class(iv_sv_component_t), intent(in) :: self
+    real(dp), intent(in) :: x         ! evaluation point
+    integer, intent(in) :: N          ! number of nodes
+    real(dp), intent(in) :: nodes(N)  ! nodes (block structure)
+    procedure(basis_function), pointer :: f
+
     integer  :: i
     real(dp) :: xL, xR
     real(dp) :: h(4)
-
-    call self%base%get_spline_function(1, f)
 
     i = find_element_index(N, x, nodes)
     ! If x is not in the domain spanned by the nodes, set to 0 and return
@@ -145,7 +167,7 @@ contains
           self%c2(i + 1) * h(3) + &
           self%c2(i)     * h(4)
 
-  end function reconstruct_profile
+  end function point_eval
 
 
   !> Find which element interval [x_i, x_{i+1}] contains x.
