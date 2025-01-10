@@ -23,6 +23,7 @@ program legolas
   use mod_grid, only: grid_t, new_grid
   use mod_eigenfunctions, only: eigenfunctions_t, new_eigenfunctions
   use mod_physics, only: physics_t, new_physics
+  use mod_iv_module, only: iv_module_t, new_iv_module
   implicit none
 
   !> A matrix in eigenvalue problem wBX = AX
@@ -37,6 +38,7 @@ program legolas
   type(background_t) :: background
   type(eigenfunctions_t) :: eigenfunctions
   type(physics_t) :: physics
+  type(iv_module_t) :: iv_module
   !> array with eigenvalues
   complex(dp), allocatable  :: omega(:)
   !> matrix with right eigenvectors, column indices correspond to omega indices
@@ -69,6 +71,12 @@ program legolas
   matrix_B = new_matrix(nb_rows=settings%dims%get_dim_matrix(), label="B")
   call build_matrices(matrix_B, matrix_A, settings, grid, background, physics)
   timer%matrix_time = timer%end_timer()
+
+  ! TODO: Solve initial value problem
+  iv_module = new_iv_module(settings, grid)
+  call iv_module%initialise()
+  call iv_module%solve_ivp()
+
 
   call logger%info("solving eigenvalue problem...")
   call timer%start_timer()

@@ -135,7 +135,7 @@ set (sources
         initial_value/mod_iv_state_vector_component.f08
         initial_value/mod_iv_state_vector.f08
         initial_value/mod_iv_solver.f08
-        # initial_value/mod_iv_module.f08
+        initial_value/mod_iv_module.f08
         eigenfunctions/mod_eigenfunctions.f08
         eigenfunctions/mod_ef_assembly.f08
         eigenfunctions/mod_base_efs.f08

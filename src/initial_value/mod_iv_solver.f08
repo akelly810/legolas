@@ -4,7 +4,6 @@
 !!
 module mod_iv_solver
   use mod_logging, only: logger, str
-  use mod_settings, only: settings_t
   use mod_matrix_structure, only: matrix_t
   use mod_global_variables, only: dp
 
@@ -19,11 +18,10 @@ module mod_iv_solver
 contains
 
   !> Solve the initial value problem
-  !! (AK) NOTE: Should move some logic out of here and take in a 'settings' object.
-  subroutine solve_ivp(matrix_A, matrix_B, x, dt, t_end, hist)
-    !> FEM matrix
+  subroutine solve(matrix_A, matrix_B, x, dt, t_end, hist)
+    !> FEM matrix A
     type(matrix_t)                           :: matrix_A
-    !> FEM matrix
+    !> FEM matrix B
     type(matrix_t)                           :: matrix_B
     !> initial condition, gets updated with final result
     complex(dp), dimension(:), intent(inout) :: x
@@ -138,7 +136,7 @@ contains
     deallocate(rhs)
     deallocate(z)
 
-  end subroutine solve_ivp
+  end subroutine solve
 
 
 end module mod_iv_solver

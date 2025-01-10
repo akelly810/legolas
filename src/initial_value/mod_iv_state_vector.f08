@@ -155,6 +155,9 @@ module mod_iv_state_vector
 
     stride = 2 * self%num_components
 
+    ! FIXME: Need to allocate x0 somewhere ...
+    ! allocate(self%x0(N))
+
     ! Compute coefficients for each component
     do i = 1, size(self%components)
       call self%components(i)%ptr%compute_coeffs(N, nodes)
