@@ -75,6 +75,8 @@ contains
       call self%compute_quad_coeffs(N, nodes)
     case('cubic')
       call self%compute_cubic_coeffs(N, nodes)
+    case default
+      call logger%error("Basis function type is unknown to IV state vector component.")
     end select
   end subroutine compute_coeffs
 
@@ -117,6 +119,9 @@ contains
 
 
   ! TODO: Test this
+  ! -----------------------------------------------------------------
+  ! Reconstruct the profiles from coefficients
+  ! -----------------------------------------------------------------
   subroutine reconstruct_profile(self, N_fine, x_fine, N, nodes)
     class(iv_sv_component_t), intent(inout) :: self
     integer, intent(in) :: N_fine
@@ -128,15 +133,16 @@ contains
     integer :: i
 
     if (allocated(self%profile)) deallocate(self%profile)
-    allocate(self%profile(N))
+    allocate(self%profile(N_fine))
 
     call self%base%get_spline_function(1, f)
 
     do i = 1, N_fine
-      self%profile(i) = self%point_eval(x_fine(i), N, nodes, f)
+      self%profile(i) = self%point_eval(x_fine(i), N, nodes, f)  ! FIXME: Can we make point_eval elemental and vectorise this?
     end do
    
   end subroutine reconstruct_profile
+
 
   pure real(dp) function point_eval(self, x, N, nodes, f) result(res)
     class(iv_sv_component_t), intent(in) :: self
@@ -172,7 +178,6 @@ contains
 
   !> Find which element interval [x_i, x_{i+1}] contains x.
   !! Return the index i, or if x is out of range return 0.
-  !! Static utility procedure
   pure integer function find_element_index(N, x, nodes) result(res)
     integer, intent(in)  :: N
     real(dp), intent(in) :: x

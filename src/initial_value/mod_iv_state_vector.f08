@@ -181,13 +181,23 @@ module mod_iv_state_vector
   end subroutine assemble_iv_array
 
 
-  subroutine reassemble_from_block(self)
+  subroutine reassemble_from_block(self, N_fine, x_fine, N, nodes)
     class(iv_state_vector_t), intent(inout) :: self
+    !> Number of grid points for reassembly
+    integer, intent(in) :: N_fine
+    !> Array of grid points for reassembly
+    real(dp), intent(in) :: x_fine(N_fine)
+    !> Number of grid points in block structure
+    integer, intent(in) :: N
+    !> Array of grid points in block structure
+    real(dp), intent(in) :: nodes(N)
 
-    ! Extract components from interleaved array
+    integer :: i
 
-    ! 
-
+    ! Get each component to compute its profile
+    do i = 1, self%num_components
+      call self%components(i)%ptr%reconstruct_profile(N_fine, x_fine, N, nodes)
+    end do
 
   end subroutine reassemble_from_block
 

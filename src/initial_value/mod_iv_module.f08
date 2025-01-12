@@ -5,7 +5,6 @@ module mod_iv_module
   use mod_settings, only: settings_t
   use mod_state_vector_component, only: sv_component_t
   use mod_grid, only: grid_t
-
   use mod_iv_state_vector, only: iv_state_vector_t, init_and_bind
   use mod_iv_solver, only: solve
   implicit none
@@ -17,6 +16,8 @@ module mod_iv_module
     type(settings_t), pointer, private :: settings
     type(grid_t), pointer, private :: grid
     type(iv_state_vector_t), private :: state_vec
+
+    real, allocatable :: iv_grid(:) 
   contains
 
   procedure, public :: initialise
@@ -71,9 +72,40 @@ contains
   subroutine reconstruct_profiles(self)
     class(iv_module_t), intent(inout) :: self
 
-    ! TODO: Handle profile reconstruction
-    call self%state_vec%reassemble_from_block()
-    ! ...
+    ! Contruct a fine linearly-spaced grid iv_grid for output
+    integer :: N, i, j
+    real(dp), allocatable :: iv_grid(:)
+    real(dp) :: grid_start, grid_end, h
+
+    N = self%settings%iv%get_iv_gridpts()
+    grid_start = self%settings%grid%get_grid_start()
+    grid_end = self%settings%grid%get_grid_end()
+    
+    allocate(iv_grid(N))
+    h = (grid_end - grid_start) / (N - 1)
+    do i = 1, N
+      iv_grid(i) = grid_start + (i - 1) * h
+    end do
+
+    ! Handle profile reconstruction
+    call self%state_vec%reassemble_from_block(N, iv_grid, self%settings%grid%get_gridpts(), self%grid%base_grid)
+
+    ! Handle output
+    ! Add code here to write array self%components(i)%ptr%profile to file
+    open( &
+    unit=30, &
+    file="output.txt", &
+    access="stream", &
+    status="unknown", &
+    action="write", &
+    form="formatted" &
+    )
+
+    do j = 1, size(self%state_vec%components(1)%ptr%profile)
+      write(30, '(F6.4)') self%state_vec%components(1)%ptr%profile(j)
+    end do
+
+    close(30)
 
   end subroutine reconstruct_profiles
 

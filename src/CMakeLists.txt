@@ -131,6 +131,7 @@ set (sources
         solvers/arnoldi/smod_arpack_shift_invert.f08
         solvers/smod_inverse_iteration.f08
         initial_value/mod_iv_globals.f08
+        initial_value/mod_iv_settings.f08
         initial_value/mod_iv_initial_conditions.f08
         initial_value/mod_iv_state_vector_component.f08
         initial_value/mod_iv_state_vector.f08
