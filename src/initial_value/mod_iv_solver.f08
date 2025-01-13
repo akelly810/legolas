@@ -13,12 +13,14 @@ module mod_iv_solver
   use mod_transform_matrix, only: matrix_to_banded
   implicit none
 
+  ! TODO: Move to settings
   real, parameter :: alpha = 0.5  ! 0.0/0.5/1.0 for FW Euler / Trapezoidal method / BW Euler
 
 contains
 
+  ! TODO: Replace solver param arguments with settings
   !> Solve the initial value problem
-  subroutine solve(matrix_A, matrix_B, x, dt, t_end, hist)
+  subroutine solve(matrix_A, matrix_B, x, dt, t_end, hist, save_stride)
     !> FEM matrix A
     type(matrix_t)                           :: matrix_A
     !> FEM matrix B
@@ -29,8 +31,10 @@ contains
     real, intent(in)                         :: dt
     !> simulation end time
     real, intent(in)                         :: t_end
-    !> save history for plotting (optional)
+    !> only every save_stride step is stored + initial + final
     complex(dp), dimension(:,:), optional, intent(out) :: hist
+    !> stride for saving in hist
+    integer, optional, intent(in) :: save_stride
 
     type(banded_matrix_t) :: A, B, M
     integer :: A_ku, A_kl               ! # upper diagonals, # lower diagonals
@@ -42,6 +46,9 @@ contains
     integer :: n                        ! dimension of matrices and x
     integer :: num_steps                ! number of time steps
     integer :: i                        ! loop index
+    integer :: stride                   ! actual stride to use
+    integer :: i_save                   ! snapshot counter
+    integer :: num_save                 ! number of snapshots to store in hist
 
     ! Check input sanity
     if (.not. (matrix_A%matrix_dim == matrix_B%matrix_dim)) then
@@ -51,6 +58,13 @@ contains
 
     if (.not. (matrix_A%matrix_dim == size(x))) then
       call logger%error("Initial condition x0 size is not compatible with A, B matrices")
+    end if
+
+    ! Use the save_stride if provided, otherwise save every step
+    if (present(save_stride)) then
+      stride = save_stride
+    else
+      stride = 1
     end if
 
     n = matrix_A%matrix_dim
@@ -64,6 +78,21 @@ contains
     num_steps = nint(t_end / dt)
     allocate(rhs, mold = x)
     allocate(z, mold = x)
+
+    ! Figure out how many snapshots to store
+    if (present(hist)) then
+      num_save = floor(real((num_steps - 1))/real(stride)) + 2
+  
+      if (size(hist, dim=1) /= n .or. size(hist, dim=2) < num_save) then
+        call logger%error("hist array not allocated or too small to store snapshots.")
+        return
+      end if
+  
+      ! Save the initial condition as the first snapshot
+      i_save = 1
+      hist(:, i_save) = x
+      i_save = i_save + 1
+    end if
 
     ! M will contain the result of a banded addition between A and B
     M_ku = max(A_ku, B_ku)
@@ -87,38 +116,10 @@ contains
       beta = (1 - alpha) * dt  ! scalar
 
       ! 1. compute rhs=Bx
-      call zgbmv( &
-        'N', &
-        B%m, &
-        B%n, &
-        B%kl, &
-        B%ku, &
-        (1.0_dp, 0.0_dp), &
-        B%AB, &
-        size(B%AB, dim = 1), &
-        x, &
-        1, &
-        (0.0_dp, 0.0_dp), &
-        rhs, &
-        1 &
-      )
+      call zgbmv('N', B%m, B%n, B%kl, B%ku, (1.0_dp, 0.0_dp), B%AB, size(B%AB, dim = 1), x, 1, (0.0_dp, 0.0_dp), rhs, 1)
 
       ! 2. compute z=Ax
-      call zgbmv( &
-        'N', &
-        A%m, &
-        A%n, &
-        A%kl, &
-        A%ku, &
-        (1.0_dp, 0.0_dp), &
-        A%AB, &
-        size(A%AB, dim = 1), &
-        x, &
-        1, &
-        (0.0_dp, 0.0_dp), &
-        z, &
-        1 &
-      )
+      call zgbmv('N', A%m, A%n, A%kl, A%ku, (1.0_dp, 0.0_dp), A%AB, size(A%AB, dim = 1), x, 1, (0.0_dp, 0.0_dp), z, 1)
 
       ! 3. compute rhs = rhs + beta*z
       call zaxpy(n, beta, z, 1, rhs, 1)
@@ -128,7 +129,17 @@ contains
 
       ! Save in history
       if (present(hist)) then
-        hist(i,:) = x
+        ! Save every n-th snapshot
+        if (mod(i, stride) == 0 .and. i < num_steps) then
+          hist(:, i_save) = x
+          i_save = i_save + 1
+        end if
+  
+        ! Save at final step
+        if (i == num_steps) then
+          hist(:, i_save) = x
+          i_save = i_save + 1
+        end if
       end if
     end do
 

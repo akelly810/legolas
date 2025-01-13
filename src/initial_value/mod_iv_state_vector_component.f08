@@ -176,6 +176,7 @@ contains
   end function point_eval
 
 
+  ! TODO: This can become expensive, can it be made more efficient?
   !> Find which element interval [x_i, x_{i+1}] contains x.
   !! Return the index i, or if x is out of range return 0.
   pure integer function find_element_index(N, x, nodes) result(res)

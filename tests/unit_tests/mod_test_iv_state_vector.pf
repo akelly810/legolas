@@ -66,6 +66,9 @@ contains
   end subroutine mock_compute_coeffs
 
 
+  ! --------------------------------------------------------------------
+  !  Test setup
+  ! --------------------------------------------------------------------
   @before
   subroutine init_test()
     ! General test setup
@@ -79,6 +82,10 @@ contains
     call logger%set_logging_level(TEST_LOG_LVL)
   end subroutine tear_down
 
+
+  ! --------------------------------------------------------------------
+  !  Main tests
+  ! --------------------------------------------------------------------
   @test
   subroutine test_compute_quad_coeffs()
     type(iv_sv_component_t) :: comp
