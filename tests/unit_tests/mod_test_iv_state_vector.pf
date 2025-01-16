@@ -201,6 +201,61 @@ contains
   end subroutine test_assemble_iv_array
 
 
+  !> Check that disassemble_iv_array() correctly reads the block-format array x0
+  !! into the c1 and c2 arrays for each component.
+  @test
+  subroutine test_disassemble_iv_array()
+    integer, parameter :: N = 2
+    integer, parameter :: num_components = 2
+    integer :: stride, i
+
+    type(iv_state_vector_t) :: state_vec
+
+    real(dp), dimension(:), allocatable :: x0
+    real(dp), dimension(:,:), allocatable :: c1_expected, c2_expected
+
+    call set_name("IV module: test disassembly of the initial value interleaved array")
+
+    ! Fill hardcoded array x0
+    stride = 2 * num_components  ! 2 coeffs each
+    allocate(x0(stride*N))
+
+    x0 = [1d0, 2d0, 3d0, 4d0, 5d0, 6d0, 7d0, 8d0]
+
+    ! Create the state vec
+    state_vec%num_components = num_components
+    state_vec%stride = stride
+
+    allocate(state_vec%components(num_components))
+
+    do i = 1, num_components
+      allocate(state_vec%components(i)%ptr)   ! don't actually need to set up each component
+    end do
+
+    ! Put x0 in the state vec
+    allocate(state_vec%x0(stride*N))
+    state_vec%x0 = x0
+
+    call state_vec%disassemble_iv_array(N)
+
+    ! (i,j) = component i, node j
+    allocate(c1_expected(num_components, N), c2_expected(num_components, N))
+
+    c1_expected(1,:) = [1d0, 5d0]
+    c2_expected(1,:) = [2d0, 6d0]
+
+    c1_expected(2,:) = [3d0, 7d0]
+    c2_expected(2,:) = [4d0, 8d0]
+
+    ! Check against hardcoded values. Equality should be exact
+    do i = 1, num_components
+      @assertEqual(state_vec%components(i)%ptr%c1, c1_expected(i,:))
+      @assertEqual(state_vec%components(i)%ptr%c2, c2_expected(i,:))
+    end do
+
+  end subroutine test_disassemble_iv_array
+
+
   ! TODO: Fix this test...
   subroutine test_initialise_components()
     type(iv_state_vector_t) :: state_vec

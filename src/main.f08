@@ -76,7 +76,7 @@ program legolas
   iv_module = new_iv_module(settings, grid)
   call iv_module%initialise()
   call iv_module%solve_ivp(matrix_A, matrix_B)
-  call iv_module%reconstruct_profiles()
+  call iv_module%postprocess_snapshots()
 
 
   call logger%info("solving eigenvalue problem...")

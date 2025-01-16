@@ -26,7 +26,6 @@ module mod_iv_module
   procedure, public :: initialise
   procedure, public :: solve_ivp
 
-  procedure, public :: reconstruct_profiles
   procedure, public :: postprocess_snapshots
 
   end type iv_module_t
@@ -97,9 +96,10 @@ contains
     do i_snap = 1, self%settings%iv%n_snapshots
       ! 1. Update the state vector
       self%state_vec%x0_cplx = self%snapshots(:, i_snap)
+      self%state_vec%x0 = real(self%state_vec%x0_cplx)
 
       ! 2. Re-compute c1, c2 from x0_cplx
-      !    TODO: Make new procedure: state_vec%disassemble_iv_array(..)
+      call self%state_vec%disassemble_iv_array(self%settings%grid%get_gridpts())
 
       ! 3. Reconstruct
       call self%state_vec%reassemble_from_block( &
@@ -123,46 +123,5 @@ contains
 
   end subroutine postprocess_snapshots
 
-
-  ! TODO: To be replaced by postprocess_snapshots()
-  subroutine reconstruct_profiles(self)
-    class(iv_module_t), intent(inout) :: self
-
-    ! Contruct a fine linearly-spaced grid iv_grid for output
-    integer :: N, i, j
-    real(dp), allocatable :: iv_grid(:)
-    real(dp) :: grid_start, grid_end, h
-
-    N = self%settings%iv%get_iv_gridpts()
-    grid_start = self%settings%grid%get_grid_start()
-    grid_end = self%settings%grid%get_grid_end()
-    
-    allocate(iv_grid(N))
-    h = (grid_end - grid_start) / (N - 1)
-    do i = 1, N
-      iv_grid(i) = grid_start + (i - 1) * h
-    end do
-
-    ! Handle profile reconstruction
-    call self%state_vec%reassemble_from_block(N, iv_grid, self%settings%grid%get_gridpts(), self%grid%base_grid)
-
-    ! Handle output
-    ! TODO: Do this properly
-    open( &
-    unit=30, &
-    file="output.txt", &
-    access="stream", &
-    status="unknown", &
-    action="write", &
-    form="formatted" &
-    )
-
-    do j = 1, size(self%state_vec%components(1)%ptr%profile)
-      write(30, '(F6.4)') self%state_vec%components(1)%ptr%profile(j)
-    end do
-
-    close(30)
-
-  end subroutine reconstruct_profiles
 
 end module mod_iv_module

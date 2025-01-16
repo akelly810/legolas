@@ -24,12 +24,13 @@ module mod_iv_state_vector
     integer :: num_components
     integer :: stride
 
-    real(dp), allocatable :: x0(:)          ! FIXME: we need to keep a history of this somehow ..
+    real(dp), allocatable :: x0(:)
     complex(dp), allocatable :: x0_cplx(:)  ! FIXME: properly handle real vs complex mixing..
 
     contains
       procedure, public :: initialise_components
       procedure, public :: assemble_iv_array
+      procedure, public :: disassemble_iv_array
       procedure, public :: reassemble_from_block
 
   end type iv_state_vector_t
@@ -131,6 +132,7 @@ module mod_iv_state_vector
     end if
 
     do i = 1, self%num_components
+      ! TODO: Add a 'name' attribute to the iv_components as well and check that iv_comp%name == sv_comp%name
       call self%components(i)%ptr%bind_iv_component(self%base%components(i)%ptr, &
                                                     fcn = f_list(i)%ptr, &
                                                     dfcn = df_list(i)%ptr)
@@ -181,6 +183,8 @@ module mod_iv_state_vector
   end subroutine assemble_iv_array
 
 
+  !>
+  !!
   subroutine reassemble_from_block(self, N_fine, x_fine, N, nodes)
     class(iv_state_vector_t), intent(inout) :: self
     !> Number of grid points for reassembly
@@ -201,5 +205,34 @@ module mod_iv_state_vector
 
   end subroutine reassemble_from_block
 
+  !> Gather each component's c1 and c2 coefficients from the
+  !! block-format array x0. This is the inverse of assemble_iv_array.
+  subroutine disassemble_iv_array(self, N)
+    class(iv_state_vector_t), intent(inout) :: self
+    !> # of grid points (nodes) for each component
+    integer, intent(in) :: N
+  
+    integer :: i, j, idx
+  
+    ! Loop over all components and fill c1, c2 from x0
+    do i = 1, self%num_components
+      ! Make sure c1 and c2 are allocated
+      if (.not. allocated(self%components(i)%ptr%c1)) then
+        allocate(self%components(i)%ptr%c1(N), self%components(i)%ptr%c2(N))
+      end if
+  
+      do j = 1, 2  ! c1 or c2
+        idx = 2*(i - 1) + j  ! offset in the x0 array
+        select case (j)
+          case(1)  ! c1
+            self%components(i)%ptr%c1 = self%x0(idx : self%stride*N : self%stride)
+          case(2)  ! c2
+            self%components(i)%ptr%c2 = self%x0(idx : self%stride*N : self%stride)
+        end select
+      end do
+    end do
+  
+  end subroutine disassemble_iv_array
+  
 
 end module mod_iv_state_vector
