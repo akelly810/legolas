@@ -30,8 +30,8 @@ contains
     iv_settings%snapshot_stride = 10
 
     iv_settings%t_start = 0.0
-    iv_settings%t_end = 2.0
-    iv_settings%n_steps = 200
+    iv_settings%t_end = 0.1
+    iv_settings%n_steps = 500
     iv_settings%step_size = (iv_settings%t_end - iv_settings%t_start) / real(iv_settings%n_steps)
 
     iv_settings%n_snapshots = floor(real(iv_settings%n_steps - 1) / real(iv_settings%snapshot_stride)) + 2

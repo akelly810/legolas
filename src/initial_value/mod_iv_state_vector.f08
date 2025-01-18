@@ -205,6 +205,7 @@ module mod_iv_state_vector
 
   end subroutine reassemble_from_block
 
+  
   !> Gather each component's c1 and c2 coefficients from the
   !! block-format array x0. This is the inverse of assemble_iv_array.
   subroutine disassemble_iv_array(self, N)

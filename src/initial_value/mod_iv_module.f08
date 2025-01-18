@@ -59,7 +59,7 @@ contains
     call self%state_vec%assemble_iv_array(self%settings%grid%get_gridpts(), self%grid%base_grid)
 
     ! Setup snapshots array
-    allocate(self%snapshots(self%state_vec%stride, self%settings%iv%n_snapshots))
+    allocate(self%snapshots(self%state_vec%stride * self%settings%grid%get_gridpts(), self%settings%iv%n_snapshots))
 
     self%is_initialised = .true.
   end subroutine initialise
@@ -109,11 +109,11 @@ contains
 
       ! 4. Output the profile
       ! TODO: Integrate this with data io module
-      open(unit=30, file="snapshot_"//trim(adjustl(str(i_snap)))//".txt", &
+      open(unit=30, file="data/snapshot_"//trim(adjustl(str(i_snap)))//".txt", &
           status="unknown", action="write", form="formatted")
 
       do i = 1, size(self%state_vec%components(1)%ptr%profile)
-        write(30, '(F8.5)') self%state_vec%components(1)%ptr%profile(i)
+        write(30, '(E12.5)') self%state_vec%components(1)%ptr%profile(i)
       end do
 
       close(30)

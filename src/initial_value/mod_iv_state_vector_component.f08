@@ -1,6 +1,6 @@
 module mod_iv_state_vector_component
   use mod_global_variables, only: dp, str_len_arr
-  use mod_logging, only: logger
+  use mod_logging, only: logger, str
   use mod_basis_functions, only: basis_function
   use mod_iv_globals, only: profile_fcn
   use mod_state_vector_component, only: sv_component_t
@@ -69,6 +69,15 @@ contains
     integer, intent(in)                     :: N
     real(dp), intent(in)                    :: nodes(N)
 
+    if (allocated(self%c1) .or. allocated(self%c2)) then
+      call logger%warning("IV component coefficients already allocated")
+      deallocate(self%c1)
+      deallocate(self%c2)
+    end if
+
+    allocate(self%c1(N))
+    allocate(self%c2(N))
+
     ! Compute the coefficients associated to each basis fcn.
     select case(self%base%get_basis_function_name())
     case('quadratic')
@@ -89,13 +98,12 @@ contains
     integer, intent(in)    :: N
     real(dp), intent(in)   :: nodes(N)
 
-    integer :: i
     real(dp), allocatable :: midpoints(:)
     allocate(midpoints(N - 1))
 
     ! c1 = fcn(midpoints)
     midpoints = 0.5 * (nodes(2:) + nodes(:N-1))
-    self%c1 = [(0.0d0, i = 1,N)]
+    self%c1 = 0.0d0
     self%c1(2:) = self%p_fcn(midpoints)  ! 0 followed by N-1 midpoint values
 
     ! c2 = fcn(nodes)
@@ -135,7 +143,7 @@ contains
     if (allocated(self%profile)) deallocate(self%profile)
     allocate(self%profile(N_fine))
 
-    call self%base%get_spline_function(1, f)
+    call self%base%get_spline_function(0, f)
 
     do i = 1, N_fine
       self%profile(i) = self%point_eval(x_fine(i), N, nodes, f)  ! FIXME: Can we make point_eval elemental and vectorise this?

@@ -20,7 +20,7 @@ contains
 
   ! TODO: Replace solver param arguments with settings
   !> Solve the initial value problem
-  subroutine solve(matrix_A, matrix_B, x, dt, t_end, hist, save_stride)
+  subroutine solve(matrix_A, matrix_B, x, dt, t_end, snapshots, save_stride)
     !> FEM matrix A
     type(matrix_t)                           :: matrix_A
     !> FEM matrix B
@@ -32,8 +32,8 @@ contains
     !> simulation end time
     real, intent(in)                         :: t_end
     !> only every save_stride step is stored + initial + final
-    complex(dp), dimension(:,:), optional, intent(out) :: hist
-    !> stride for saving in hist
+    complex(dp), dimension(:,:), optional, intent(out) :: snapshots
+    !> stride for saving in snapshots
     integer, optional, intent(in) :: save_stride
 
     type(banded_matrix_t) :: A, B, M
@@ -80,17 +80,16 @@ contains
     allocate(z, mold = x)
 
     ! Figure out how many snapshots to store
-    if (present(hist)) then
+    if (present(snapshots)) then
       num_save = floor(real((num_steps - 1))/real(stride)) + 2
-  
-      if (size(hist, dim=1) /= n .or. size(hist, dim=2) < num_save) then
+      if (size(snapshots, dim=1) /= n .or. size(snapshots, dim=2) < num_save) then
         call logger%error("hist array not allocated or too small to store snapshots.")
         return
       end if
   
       ! Save the initial condition as the first snapshot
       i_save = 1
-      hist(:, i_save) = x
+      snapshots(:, i_save) = x
       i_save = i_save + 1
     end if
 
@@ -128,16 +127,16 @@ contains
       x = solve_linear_system_complex_banded(M, rhs)
 
       ! Save in history
-      if (present(hist)) then
+      if (present(snapshots)) then
         ! Save every n-th snapshot
         if (mod(i, stride) == 0 .and. i < num_steps) then
-          hist(:, i_save) = x
+          snapshots(:, i_save) = x
           i_save = i_save + 1
         end if
   
         ! Save at final step
         if (i == num_steps) then
-          hist(:, i_save) = x
+          snapshots(:, i_save) = x
           i_save = i_save + 1
         end if
       end if
