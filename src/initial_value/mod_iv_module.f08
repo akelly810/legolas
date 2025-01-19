@@ -71,11 +71,8 @@ contains
     type(matrix_t), intent(in) :: matrix_B
 
     ! Now call the solver
-    call solve(matrix_A, matrix_B, self%state_vec%x0_cplx, self%settings%iv%step_size, self%settings%iv%t_end, &
-                self%snapshots, self%settings%iv%snapshot_stride)
+    call solve(matrix_A, matrix_B, self%state_vec%x0_cplx, self%settings, self%snapshots)
     
-    ! TODO: Add mode for saving growth rates only.. plot 1st element of block-format vector x0
-
   end subroutine solve_ivp
 
 

@@ -13,9 +13,10 @@ module mod_iv_settings
     real :: t_start
     real :: t_end
     integer :: n_steps
-    real    :: step_size
+    real :: alpha
   contains
     procedure, public :: get_iv_gridpts
+    procedure, public :: get_step_size
   end type iv_settings_t
 
   public :: new_iv_settings
@@ -29,10 +30,11 @@ contains
     iv_settings%iv_gridpts = 100
     iv_settings%snapshot_stride = 10
 
+    iv_settings%alpha = 0.52  ! 0.0/0.5/1.0 for FW Euler / Trapezoidal method / BW Euler
+
     iv_settings%t_start = 0.0
     iv_settings%t_end = 0.1
     iv_settings%n_steps = 500
-    iv_settings%step_size = (iv_settings%t_end - iv_settings%t_start) / real(iv_settings%n_steps)
 
     iv_settings%n_snapshots = floor(real(iv_settings%n_steps - 1) / real(iv_settings%snapshot_stride)) + 2
 
@@ -43,5 +45,11 @@ contains
     class(iv_settings_t), intent(in) :: self
     get_iv_gridpts = self%iv_gridpts
   end function get_iv_gridpts
+
+
+  pure real function get_step_size(self)
+    class(iv_settings_t), intent(in) :: self
+    get_step_size = (self%t_end - self%t_start) / real(self%n_steps)
+  end function get_step_size
 
 end module mod_iv_settings

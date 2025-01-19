@@ -6,6 +6,7 @@ module mod_iv_solver
   use mod_logging, only: logger, str
   use mod_matrix_structure, only: matrix_t
   use mod_global_variables, only: dp
+  use mod_settings, only: settings_t
 
   use mod_banded_matrix, only: banded_matrix_t, new_banded_matrix
   use mod_banded_operations, only: banded_copy, constant_times_banded_plus_banded
@@ -13,28 +14,20 @@ module mod_iv_solver
   use mod_transform_matrix, only: matrix_to_banded
   implicit none
 
-  ! TODO: Move to settings
-  real, parameter :: alpha = 0.5  ! 0.0/0.5/1.0 for FW Euler / Trapezoidal method / BW Euler
-
 contains
 
-  ! TODO: Replace solver param arguments with settings
   !> Solve the initial value problem
-  subroutine solve(matrix_A, matrix_B, x, dt, t_end, snapshots, save_stride)
+  subroutine solve(matrix_A, matrix_B, x, settings, snapshots)
     !> FEM matrix A
     type(matrix_t)                           :: matrix_A
     !> FEM matrix B
     type(matrix_t)                           :: matrix_B
     !> initial condition, gets updated with final result
     complex(dp), dimension(:), intent(inout) :: x
-    !> time step size
-    real, intent(in)                         :: dt
-    !> simulation end time
-    real, intent(in)                         :: t_end
-    !> only every save_stride step is stored + initial + final
+    !> settings
+    type(settings_t), intent(in) :: settings
+    !> optionally save every n-th step in this 2D array
     complex(dp), dimension(:,:), optional, intent(out) :: snapshots
-    !> stride for saving in snapshots
-    integer, optional, intent(in) :: save_stride
 
     type(banded_matrix_t) :: A, B, M
     integer :: A_ku, A_kl               ! # upper diagonals, # lower diagonals
@@ -44,11 +37,16 @@ contains
     complex(dp), allocatable :: z(:)    ! intermediate result
     complex(dp), allocatable :: rhs(:)
     integer :: n                        ! dimension of matrices and x
-    integer :: num_steps                ! number of time steps
-    integer :: i                        ! loop index
-    integer :: stride                   ! actual stride to use
+    integer :: i
+
     integer :: i_save                   ! snapshot counter
     integer :: num_save                 ! number of snapshots to store in hist
+    integer :: save_stride              ! save every save_stride-th step
+    real :: alpha                       ! solver implicitness
+    real :: dt
+    real :: t_end
+    integer :: num_steps
+
 
     ! Check input sanity
     if (.not. (matrix_A%matrix_dim == matrix_B%matrix_dim)) then
@@ -60,12 +58,11 @@ contains
       call logger%error("Initial condition x0 size is not compatible with A, B matrices")
     end if
 
-    ! Use the save_stride if provided, otherwise save every step
-    if (present(save_stride)) then
-      stride = save_stride
-    else
-      stride = 1
-    end if
+    alpha = settings%iv%alpha
+    save_stride = settings%iv%snapshot_stride
+    t_end = settings%iv%t_end
+    num_steps = settings%iv%n_steps
+    dt = settings%iv%get_step_size()
 
     n = matrix_A%matrix_dim
     call matrix_A%get_nb_diagonals(ku=A_ku, kl=A_kl)
@@ -75,13 +72,12 @@ contains
     call matrix_to_banded(matrix_A, A_kl, A_ku, A)
     call matrix_to_banded(matrix_B, B_kl, B_ku, B)
 
-    num_steps = nint(t_end / dt)
     allocate(rhs, mold = x)
     allocate(z, mold = x)
 
     ! Figure out how many snapshots to store
     if (present(snapshots)) then
-      num_save = floor(real((num_steps - 1))/real(stride)) + 2
+      num_save = floor(real((num_steps - 1))/real(save_stride)) + 2
       if (size(snapshots, dim=1) /= n .or. size(snapshots, dim=2) < num_save) then
         call logger%error("hist array not allocated or too small to store snapshots.")
         return
@@ -129,7 +125,7 @@ contains
       ! Save in history
       if (present(snapshots)) then
         ! Save every n-th snapshot
-        if (mod(i, stride) == 0 .and. i < num_steps) then
+        if (mod(i, save_stride) == 0 .and. i < num_steps) then
           snapshots(:, i_save) = x
           i_save = i_save + 1
         end if
@@ -142,7 +138,6 @@ contains
       end if
     end do
 
-    ! Unit tests require deallocation
     deallocate(rhs)
     deallocate(z)
 

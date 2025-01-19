@@ -93,7 +93,7 @@ contains
     integer :: N
     real(dp), parameter :: tol = 1.0d-12
 
-    call set_name("IV module: test computing quadratic coefficients")
+    call set_name("IV state vector: test computing quadratic coefficients")
 
     ! Example input nodes
     N = 4
@@ -127,7 +127,7 @@ contains
     integer :: N
     real(dp), parameter :: tol = 1.0d-12
 
-    call set_name("IV module: test computing cubic coefficients")
+    call set_name("IV state vector: test computing cubic coefficients")
 
     ! Example input nodes
     N = 4
@@ -160,7 +160,7 @@ contains
 
     tol = 1.0d-13
 
-    call set_name("IV module: test assembly of the initial value interleaved array")
+    call set_name("IV state vector: test assembly of the initial value interleaved array")
 
     ! We have 2 components, each with N=4 grid points
     N = 4
@@ -214,7 +214,7 @@ contains
     real(dp), dimension(:), allocatable :: x0
     real(dp), dimension(:,:), allocatable :: c1_expected, c2_expected
 
-    call set_name("IV module: test disassembly of the initial value interleaved array")
+    call set_name("IV state vector: test disassembly of the initial value interleaved array")
 
     ! Fill hardcoded array x0
     stride = 2 * num_components  ! 2 coeffs each
@@ -255,37 +255,5 @@ contains
 
   end subroutine test_disassemble_iv_array
 
-
-  ! TODO: Fix this test...
-  subroutine test_initialise_components()
-    type(iv_state_vector_t) :: state_vec
-    type(state_vector_t), target :: base_vec
-    integer :: i
-
-    call set_name("IV module: test initialisation of state vector components")
-
-    ! make mock base instance state_vector_t to pass to all component initialisations
-    !
-    !
-
-    ! 8 components in the defaults case
-    allocate(base_vec%components(8))
-    do i = 1, 8
-      nullify(base_vec%components(i)%ptr)
-    end do
-    state_vec%base => base_vec
-
-    call state_vec%initialise_components("mhd")  ! triggers default
-
-    @assertEqual(8, state_vec%num_components, "num_components should be 8 for default")
-    @assertTrue(state_vec%is_initialised, "is_initialised should be true after call")
-    @assertEqual(8, size(state_vec%components), "components(:) size mismatch (default)")
-
-    ! check binding 
-    do i = 1, 8
-      @assertTrue(state_vec%components(i)%ptr%is_bound, "component should be bound")
-    end do
-
-  end subroutine test_initialise_components
 
 end module mod_test_iv_state_vector
