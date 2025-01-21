@@ -105,6 +105,9 @@ contains
     comp%p_fcn  => test_fcn
     comp%p_dfcn => null()
 
+    allocate(comp%c1(N))
+    allocate(comp%c2(N))
+
     ! Compute the coefficients
     call comp%compute_quad_coeffs(N, nodes)
 
@@ -116,6 +119,8 @@ contains
     @assertEqual(comp%c1, [0.0_dp, 0.25_dp, 2.25_dp, 6.25_dp], tolerance=tol)
     @assertEqual(comp%c2, [0.0_dp, 1.0_dp, 4.0_dp, 9.0_dp],   tolerance=tol)
 
+    deallocate(comp%c1)
+    deallocate(comp%c2)
     deallocate(nodes)
   end subroutine test_compute_quad_coeffs
 
@@ -137,6 +142,9 @@ contains
     comp%p_fcn  => test_fcn    ! x^2
     comp%p_dfcn => test_dfcn   ! 2x
 
+    allocate(comp%c1(N))
+    allocate(comp%c2(N))
+
     call comp%compute_cubic_coeffs(N, nodes)
 
     ! Expected results:
@@ -145,6 +153,8 @@ contains
     @assertEqual(comp%c1, [1.0_dp, 0.0_dp, 1.0_dp, 4.0_dp],  tolerance=tol)
     @assertEqual(comp%c2, [-2.0_dp, 0.0_dp, 2.0_dp, 4.0_dp], tolerance=tol)
 
+    deallocate(comp%c1)
+    deallocate(comp%c2)
     deallocate(nodes)
   end subroutine test_compute_cubic_coeffs
 
