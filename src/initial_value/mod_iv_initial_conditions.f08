@@ -46,26 +46,26 @@ contains
   function T(x) result(res)
     real(dp), intent(in) :: x(:)
     real(dp) :: res(size(x))
-    res = gaussian(x, 0.5d0, 1.0d0)
+    res = 0.0d0
   end function T
 
   function dT(x) result(res)
     real(dp), intent(in) :: x(:)
     real(dp) :: res(size(x))
-    res = dgaussian(x, 0.5d0, 1.0d0)
+    res = 0.0d0
   end function dT
 
 
   function v1(x) result(res)
     real(dp), intent(in) :: x(:)
     real(dp) :: res(size(x))
-    res = gaussian(x, 0.5d0, 1.0d0)
+    res = 0.0d0
   end function v1
 
   function dv1(x) result(res)
     real(dp), intent(in) :: x(:)
     real(dp) :: res(size(x))
-    res = dgaussian(x, 0.5d0, 1.0d0)
+    res = 0.0d0
   end function dv1
 
 

@@ -12,6 +12,7 @@ from pylbo.exceptions import (
     EigenvectorsNotPresent,
     MatricesNotPresent,
     ResidualsNotPresent,
+    IVSnapshotsNotPresent,
 )
 from pylbo.utilities.datfiles.file_reader import LegolasFileReader
 from pylbo.utilities.logger import pylboLogger
@@ -299,6 +300,10 @@ class LegolasDataSet(LegolasDataContainer):
         return "mhd" in self.header.get("physics_type", None) and any(
             self.equilibria["B0"] != 0
         )
+    
+    @property
+    def has_iv_snapshots(self) -> bool:
+        return self.header.get("has_iv_snapshots", False)
 
     def _ensure_compatibility(self) -> None:
         """
@@ -692,6 +697,25 @@ class LegolasDataSet(LegolasDataContainer):
             The maximum eigenvalue.
         """
         return get_maximum_eigenvalue(self.eigenvalues, real, re_range)
+
+    def get_iv_snapshots(self) -> np.ndarray:
+        """
+        Retrieve all IVP snapshots from the datfile
+        
+        Returns
+        -------
+        Returns an array of shape (num_snaphots, num_components, num_points)
+        
+        Raises
+        ------
+        IVSnapshotsNotPresent
+        """
+        if not self.has_iv_snapshots:
+            raise IVSnapshotsNotPresent
+        
+        self._iv_snapshots_data = self.filereader.read_iv_snapshots(self.header)
+
+        return self.filereader.read_iv_snapshots(self.header)
 
 
 class LegolasDataSeries(LegolasDataContainer):

@@ -16,7 +16,7 @@ module mod_iv_module
     logical, private :: is_initialised
     type(settings_t), pointer, private :: settings
     type(grid_t), pointer, private :: grid
-    type(iv_state_vector_t), private :: state_vec
+    type(iv_state_vector_t), public :: state_vec
 
     real, allocatable :: iv_grid(:) 
 
@@ -26,7 +26,7 @@ module mod_iv_module
   procedure, public :: initialise
   procedure, public :: solve_ivp
 
-  procedure, public :: postprocess_snapshots
+  procedure, public :: postprocess_snapshot
 
   end type iv_module_t
 
@@ -75,50 +75,41 @@ contains
     
   end subroutine solve_ivp
 
-
-  subroutine postprocess_snapshots(self)
+  !> Postprocess a given snapshot.
+  !! Reassemble the profile and sotre in each component
+  subroutine postprocess_snapshot(self, i_snap)
     class(iv_module_t), intent(inout) :: self
+    integer, intent(in) :: i_snap
 
-    integer :: i_snap, i
     integer :: N_fine
     real(dp), allocatable :: iv_grid(:)
 
+    if (i_snap > self%settings%iv%n_snapshots) then
+      call logger%error("requested snapshot is out of bounds")
+    end if
+
     ! Build fine grid for plotting
-    N_fine = self%settings%iv%get_iv_gridpts()
+    N_fine = self%settings%iv%get_rec_gridpts()
     allocate(iv_grid(N_fine))
 
     iv_grid = linspace(self%settings%grid%get_grid_start(), self%settings%grid%get_grid_end(), N_fine)
 
-    ! Loop over each snapshot
-    do i_snap = 1, self%settings%iv%n_snapshots
-      ! 1. Update the state vector
-      self%state_vec%x0_cplx = self%snapshots(:, i_snap)
-      self%state_vec%x0 = real(self%state_vec%x0_cplx)
+    ! 1. Update the state vector
+    self%state_vec%x0_cplx = self%snapshots(:, i_snap)
+    self%state_vec%x0 = real(self%state_vec%x0_cplx)
 
-      ! 2. Re-compute c1, c2 from x0_cplx
-      call self%state_vec%disassemble_iv_array(self%settings%grid%get_gridpts())
+    ! 2. Re-compute c1, c2 from x0_cplx
+    call self%state_vec%disassemble_iv_array(self%settings%grid%get_gridpts())
 
-      ! 3. Reconstruct
-      call self%state_vec%reassemble_from_block( &
-          N_fine, iv_grid, &
-          self%settings%grid%get_gridpts(), &
-          self%grid%base_grid )
-
-      ! 4. Output the profile
-      ! TODO: Integrate this with data io module
-      open(unit=30, file="data/snapshot_"//trim(adjustl(str(i_snap)))//".txt", &
-          status="unknown", action="write", form="formatted")
-
-      do i = 1, size(self%state_vec%components(1)%ptr%profile)
-        write(30, '(E12.5)') self%state_vec%components(1)%ptr%profile(i)
-      end do
-
-      close(30)
-    end do
+    ! 3. Reconstruct
+    call self%state_vec%reassemble_from_block( &
+        N_fine, iv_grid, &
+        self%settings%grid%get_gridpts(), &
+        self%grid%base_grid )
 
     deallocate(iv_grid)
 
-  end subroutine postprocess_snapshots
+  end subroutine postprocess_snapshot
 
 
 end module mod_iv_module

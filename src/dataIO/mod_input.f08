@@ -96,6 +96,7 @@ contains
     logical :: write_matrices, write_eigenvectors, write_residuals, write_background
     logical :: write_eigenfunctions, write_derived_eigenfunctions
     logical :: write_eigenfunction_subset
+    logical :: write_iv_snapshots
     logical :: show_results
     integer :: logging_level
     real(dp) :: eigenfunction_subset_radius
@@ -106,7 +107,7 @@ contains
       write_matrices, write_eigenvectors, write_residuals, write_background, &
       write_eigenfunctions, write_derived_eigenfunctions, write_eigenfunction_subset, &
       show_results, basename_datfile, output_folder, logging_level, &
-      eigenfunction_subset_radius, eigenfunction_subset_center
+      eigenfunction_subset_radius, eigenfunction_subset_center, write_iv_snapshots
 
     ! get defaults
     write_matrices = settings%io%write_matrices
@@ -116,6 +117,7 @@ contains
     write_eigenfunctions = settings%io%write_eigenfunctions
     write_derived_eigenfunctions = settings%io%write_derived_eigenfunctions
     write_eigenfunction_subset = settings%io%write_ef_subset
+    write_iv_snapshots = settings%io%write_iv_snapshots
     show_results = settings%io%show_results
     basename_datfile = settings%io%get_basename_datfile()
     output_folder = settings%io%get_output_folder()
@@ -140,6 +142,7 @@ contains
     )
     settings%io%ef_subset_radius = eigenfunction_subset_radius
     settings%io%ef_subset_center = eigenfunction_subset_center
+    settings%io%write_iv_snapshots = write_iv_snapshots
     settings%io%show_results = show_results
     call settings%io%set_basename_datfile(basename_datfile)
     call settings%io%set_output_folder(output_folder)
