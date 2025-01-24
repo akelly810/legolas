@@ -387,11 +387,7 @@ class LegolasHeader:
         # Compute how many bytes total: nsnap * ncomp * npts * SIZE_DOUBLE for double-precision reals
         total_values = nsnap * ncomp * npts
         bytes_to_skip = total_values * SIZE_DOUBLE
-
-        print(f"nsnap: {nsnap}")
-        print(f"npts: {npts}")
-        print(f"ncomp: {ncomp}")
-
+        
         # skip ahead
         istream.seek(offset_iv_data + bytes_to_skip)
 

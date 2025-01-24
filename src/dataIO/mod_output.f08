@@ -565,10 +565,6 @@ contains
     call logger%info("writing IV snapshots")
     n_snap   = settings%iv%n_snapshots
     n_points = settings%iv%get_rec_gridpts()
-  
-    call logger%info(str(n_snap))
-    call logger%info(str(n_points))
-    call logger%info(str(iv_module%state_vec%num_components))
 
     ! Metadata
     write(dat_fh) n_snap
