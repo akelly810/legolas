@@ -5,15 +5,15 @@ module mod_iv_settings
   private
 
   type, public :: iv_settings_t
-    integer, private :: output_res  ! gridpoints for reconstruction
+    integer :: output_res       ! gridpoints for reconstruction
     integer :: n_snapshots
-    integer :: snapshot_stride      ! save every n-th snapshot
+    integer :: snapshot_stride  ! save every n-th snapshot
 
     ! Solver params
-    real :: t_start
-    real :: t_end
+    real(dp) :: t_start
+    real(dp) :: t_end
     integer :: n_steps
-    real :: alpha
+    real(dp) :: alpha
   contains
     procedure, public :: get_output_res
     procedure, public :: get_step_size

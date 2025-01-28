@@ -42,9 +42,9 @@ contains
     integer :: i_save                   ! snapshot counter
     integer :: num_save                 ! number of snapshots to store in hist
     integer :: save_stride              ! save every save_stride-th step
-    real :: alpha                       ! solver implicitness
-    real :: dt
-    real :: t_end
+    real(dp) :: alpha                       ! solver implicitness
+    real(dp) :: dt
+    real(dp) :: t_end
     integer :: num_steps
 
 

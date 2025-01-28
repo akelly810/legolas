@@ -42,6 +42,8 @@ contains
       call read_paramlist(unit_par)
       rewind(unit_par)
       call read_unitlist(unit_par, settings)
+      rewind(unit_par)
+      call read_ivplist(unit_par, settings)
     close(unit_par)
 
     ! make sure to update dimensions after reading in the parfile
@@ -387,6 +389,41 @@ contains
       )
     end if
   end subroutine read_unitlist
+
+
+  subroutine read_ivplist(unit, settings)
+    integer, intent(in)            :: unit
+    type(settings_t), intent(inout):: settings
+
+    integer                        :: iostat
+    character(str_len)             :: iomsg
+
+    real(dp)   :: alpha, t_start, t_end
+    integer    :: n_steps, n_snapshots, snapshot_stride, output_res
+
+    namelist /ivplist/ &
+      alpha, t_start, t_end, n_steps, n_snapshots, snapshot_stride, output_res
+  
+    ! Defaults:
+    alpha           = settings%iv%alpha
+    t_start         = settings%iv%t_start
+    t_end           = settings%iv%t_end
+    n_steps         = settings%iv%n_steps
+    n_snapshots     = settings%iv%n_snapshots
+    output_res      = settings%iv%output_res
+  
+    read(unit, nml=ivplist, iostat=iostat, iomsg=iomsg)
+    call parse_io_info(iostat, iomsg)
+  
+    ! Update the settings
+    settings%iv%alpha           = alpha
+    settings%iv%t_start         = t_start
+    settings%iv%t_end           = t_end
+    settings%iv%n_steps         = n_steps
+    settings%iv%n_snapshots     = n_snapshots
+    settings%iv%output_res      = output_res
+  
+  end subroutine read_ivplist
 
 
   !> Called when the eigenfunction subset selection is enabled, this checks if the
