@@ -89,7 +89,7 @@ contains
     end if
 
     ! Build fine grid for plotting
-    N_fine = self%settings%iv%get_rec_gridpts()
+    N_fine = self%settings%iv%get_output_res()
     allocate(iv_grid(N_fine))
 
     iv_grid = linspace(self%settings%grid%get_grid_start(), self%settings%grid%get_grid_end(), N_fine)

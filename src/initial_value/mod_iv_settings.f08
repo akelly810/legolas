@@ -5,7 +5,7 @@ module mod_iv_settings
   private
 
   type, public :: iv_settings_t
-    integer, private :: rec_gridpts  ! gridpoints for reconstruction
+    integer, private :: output_res  ! gridpoints for reconstruction
     integer :: n_snapshots
     integer :: snapshot_stride      ! save every n-th snapshot
 
@@ -15,7 +15,7 @@ module mod_iv_settings
     integer :: n_steps
     real :: alpha
   contains
-    procedure, public :: get_rec_gridpts
+    procedure, public :: get_output_res
     procedure, public :: get_step_size
   end type iv_settings_t
 
@@ -27,7 +27,7 @@ contains
     type(iv_settings_t) :: iv_settings
 
     ! Set defaults
-    iv_settings%rec_gridpts = 100
+    iv_settings%output_res = 100
     iv_settings%snapshot_stride = 10
 
     iv_settings%alpha = 0.52  ! 0.0/0.5/1.0 for FW Euler / Trapezoidal method / BW Euler
@@ -41,10 +41,10 @@ contains
   end function new_iv_settings
 
 
-  pure integer function get_rec_gridpts(self)
+  pure integer function get_output_res(self)
     class(iv_settings_t), intent(in) :: self
-    get_rec_gridpts = self%rec_gridpts
-  end function get_rec_gridpts
+    get_output_res = self%output_res
+  end function get_output_res
 
 
   pure real function get_step_size(self)

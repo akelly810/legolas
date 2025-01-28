@@ -564,7 +564,7 @@ contains
     
     call logger%info("writing IV snapshots")
     n_snap   = settings%iv%n_snapshots
-    n_points = settings%iv%get_rec_gridpts()
+    n_points = settings%iv%get_output_res()
 
     ! Metadata
     write(dat_fh) n_snap
