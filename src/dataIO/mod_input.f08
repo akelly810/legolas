@@ -398,13 +398,16 @@ contains
     integer                        :: iostat
     character(str_len)             :: iomsg
 
+    logical    :: enabled
     real(dp)   :: alpha, t_start, t_end
     integer    :: n_steps, n_snapshots, snapshot_stride, output_res
 
     namelist /ivplist/ &
-      alpha, t_start, t_end, n_steps, n_snapshots, snapshot_stride, output_res
+      enabled, alpha, t_start, t_end, n_steps, n_snapshots, snapshot_stride, &
+      output_res
   
     ! Defaults:
+    enabled         = settings%iv%enabled
     alpha           = settings%iv%alpha
     t_start         = settings%iv%t_start
     t_end           = settings%iv%t_end
@@ -416,6 +419,7 @@ contains
     call parse_io_info(iostat, iomsg)
   
     ! Update the settings
+    settings%iv%enabled          = enabled
     settings%iv%alpha           = alpha
     settings%iv%t_start         = t_start
     settings%iv%t_end           = t_end

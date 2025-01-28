@@ -74,9 +74,13 @@ program legolas
 
   ! Solve initial value problem
   iv_module = new_iv_module(settings, grid)
-  call iv_module%initialise()
-  call iv_module%solve_ivp(matrix_A, matrix_B)
 
+  if (settings%iv%enabled) then
+    call logger%info("solving initial value problem...")
+    call iv_module%initialise()
+    call iv_module%solve_ivp(matrix_A, matrix_B)
+    call logger%info("done.")
+  end if
 
   call logger%info("solving eigenvalue problem...")
   call timer%start_timer()

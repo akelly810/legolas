@@ -5,6 +5,8 @@ module mod_iv_settings
   private
 
   type, public :: iv_settings_t
+    logical :: enabled
+
     integer :: output_res       ! gridpoints for reconstruction
     integer :: n_snapshots
     integer :: snapshot_stride  ! save every n-th snapshot
@@ -27,6 +29,7 @@ contains
     type(iv_settings_t) :: iv_settings
 
     ! Set defaults
+    iv_settings%enabled = .false.
     iv_settings%output_res = 100
     iv_settings%snapshot_stride = 10
 

@@ -103,7 +103,7 @@ contains
       call write_residual_data(eigenvalues, matrix_A, matrix_B, eigenvectors)
     end if
     if (settings%io%write_matrices) call write_matrix_data(matrix_A, matrix_B)
-    if (settings%io%write_iv_snapshots) then
+    if (settings%io%write_iv_snapshots .and. settings%iv%enabled) then
       call write_iv_snapshots(settings, iv_module)
     end if
 
@@ -178,7 +178,7 @@ contains
     write(dat_fh) settings%io%write_ef_subset
     write(dat_fh) settings%io%ef_subset_radius
     write(dat_fh) settings%io%ef_subset_center
-    write(dat_fh) settings%io%write_iv_snapshots
+    write(dat_fh) settings%io%write_iv_snapshots .and. settings%iv%enabled
   end subroutine write_io_info
 
 

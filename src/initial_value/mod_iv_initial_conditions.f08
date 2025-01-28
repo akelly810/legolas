@@ -33,13 +33,13 @@ contains
   function rho(x) result(res)
     real(dp), intent(in) :: x(:)
     real(dp) :: res(size(x))
-    res = gaussian(x, 0.5d0, 0.5d0)
+    res = - gaussian(x, 0.5d0, 0.5d0) + 1
   end function rho
 
   function drho(x) result(res)
     real(dp), intent(in) :: x(:)
     real(dp) :: res(size(x))
-    res = dgaussian(x, 0.5d0, 0.5d0)
+    res = - dgaussian(x, 0.5d0, 0.5d0)
   end function drho
 
 
