@@ -412,8 +412,8 @@ contains
     t_start         = settings%iv%t_start
     t_end           = settings%iv%t_end
     n_steps         = settings%iv%n_steps
-    n_snapshots     = settings%iv%n_snapshots
     output_res      = settings%iv%output_res
+    n_snapshots     = settings%iv%get_n_snapshots()
   
     read(unit, nml=ivplist, iostat=iostat, iomsg=iomsg)
     call parse_io_info(iostat, iomsg)
@@ -424,8 +424,8 @@ contains
     settings%iv%t_start         = t_start
     settings%iv%t_end           = t_end
     settings%iv%n_steps         = n_steps
-    settings%iv%n_snapshots     = n_snapshots
     settings%iv%output_res      = output_res
+    call settings%iv%set_n_snapshots(n_snapshots)
   
   end subroutine read_ivplist
 

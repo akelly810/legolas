@@ -8,7 +8,7 @@ module mod_iv_settings
     logical :: enabled
 
     integer :: output_res       ! gridpoints for reconstruction
-    integer :: n_snapshots
+    integer, private :: n_snapshots
     integer :: snapshot_stride  ! save every n-th snapshot
 
     ! Solver params
@@ -19,6 +19,8 @@ module mod_iv_settings
   contains
     procedure, public :: get_output_res
     procedure, public :: get_step_size
+    procedure, public :: set_n_snapshots
+    procedure, public :: get_n_snapshots
   end type iv_settings_t
 
   public :: new_iv_settings
@@ -50,9 +52,22 @@ contains
   end function get_output_res
 
 
-  pure real function get_step_size(self)
+  pure real(dp) function get_step_size(self)
     class(iv_settings_t), intent(in) :: self
     get_step_size = (self%t_end - self%t_start) / real(self%n_steps)
   end function get_step_size
+
+
+  pure integer function get_n_snapshots(self)
+    class(iv_settings_t), intent(in) :: self
+    get_n_snapshots = floor(real(self%n_steps - 1) / real(self%snapshot_stride)) + 2
+  end function get_n_snapshots
+
+
+  subroutine set_n_snapshots(self, n_snaps)
+    class(iv_settings_t), intent(inout) :: self
+    integer, intent(in) :: n_snaps
+    self%n_snapshots = n_snaps
+  end subroutine set_n_snapshots
 
 end module mod_iv_settings

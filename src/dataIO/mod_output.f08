@@ -563,7 +563,7 @@ contains
     integer :: n_snap, n_points
     
     call logger%info("writing IV snapshots")
-    n_snap   = settings%iv%n_snapshots
+    n_snap   = settings%iv%get_n_snapshots()
     n_points = settings%iv%get_output_res()
 
     ! Metadata

@@ -59,7 +59,7 @@ contains
     call self%state_vec%assemble_iv_array(self%settings%grid%get_gridpts(), self%grid%base_grid)
 
     ! Setup snapshots array
-    allocate(self%snapshots(self%state_vec%stride * self%settings%grid%get_gridpts(), self%settings%iv%n_snapshots))
+    allocate(self%snapshots(self%state_vec%stride * self%settings%grid%get_gridpts(), self%settings%iv%get_n_snapshots()))
 
     self%is_initialised = .true.
   end subroutine initialise
@@ -84,7 +84,7 @@ contains
     integer :: N_fine
     real(dp), allocatable :: iv_grid(:)
 
-    if (i_snap > self%settings%iv%n_snapshots) then
+    if (i_snap > self%settings%iv%get_n_snapshots()) then
       call logger%error("requested snapshot is out of bounds")
     end if
 
