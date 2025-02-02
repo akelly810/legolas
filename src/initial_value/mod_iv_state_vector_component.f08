@@ -10,6 +10,8 @@ module mod_iv_state_vector_component
     type(sv_component_t), pointer :: base => null()  ! pointer to existing sv_component_t instance
     logical :: is_bound = .false.
 
+    logical :: cplx_trans = .false.
+
     real(dp), allocatable :: c1(:), c2(:)  ! coefficients
     real(dp), allocatable :: profile(:)    ! profile on grid
 
@@ -53,6 +55,10 @@ contains
       ! Store the function pointers
       self%p_fcn  => fcn
       self%p_dfcn => dfcn
+
+      if (self%base%get_name() == 'v1' .or. self%base%get_name() == 'a1') then
+        self%cplx_trans = .true.
+      end if
 
       self%is_bound = .true.
     else

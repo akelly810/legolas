@@ -20,10 +20,14 @@ contains
     ! Add the profiles here
     f_list(1)%ptr => rho
     f_list(2)%ptr => v1
+    ! f_list(3)%ptr => zeros
+    ! f_list(4)%ptr => zeros
     f_list(3)%ptr => T
 
     df_list(1)%ptr => drho
     df_list(2)%ptr => dv1
+    ! df_list(3)%ptr => zeros
+    ! df_list(4)%ptr => zeros
     df_list(3)%ptr => dT
   end subroutine get_f_lists
 
@@ -33,13 +37,25 @@ contains
   function rho(x) result(res)
     real(dp), intent(in) :: x(:)
     real(dp) :: res(size(x))
-    res = - gaussian(x, 0.5d0, 0.5d0) + 1
+
+    ! res = 0.0d0
+    ! where (x > 0.4 .and. x < 0.6)
+    !   res = sin(5 * dpi * (x - 0.4))
+    ! end where
+
+    res = 0.1* gaussian(x, 0.5d0, 0.05d0)
   end function rho
 
   function drho(x) result(res)
     real(dp), intent(in) :: x(:)
     real(dp) :: res(size(x))
-    res = - dgaussian(x, 0.5d0, 0.5d0)
+
+    ! res = 0.0d0
+    ! where (x > 0.4 .and. x < 0.6)
+    !   res = 5 * dpi * cos(5 * dpi * (x - 0.4))
+    ! end where
+    
+    res = 0.1 * dgaussian(x, 0.5d0, 0.05d0)
   end function drho
 
 
@@ -59,14 +75,26 @@ contains
   function v1(x) result(res)
     real(dp), intent(in) :: x(:)
     real(dp) :: res(size(x))
-    res = 0.0d0
+    res = 0.1* gaussian(x, 0.5d0, 0.05d0)
   end function v1
 
   function dv1(x) result(res)
     real(dp), intent(in) :: x(:)
     real(dp) :: res(size(x))
-    res = 0.0d0
+    res = 0.1 * dgaussian(x, 0.5d0, 0.05d0)
   end function dv1
+
+  function zeros(x) result(res)
+    real(dp), intent(in) :: x(:)
+    real(dp) :: res(size(x))
+    res = 0.0d0
+  end function zeros
+
+  function ones(x) result(res)
+    real(dp), intent(in) :: x(:)
+    real(dp) :: res(size(x))
+    res = 1.0d0
+  end function ones
 
 
   real(dp) elemental function gaussian(x, mean, std_dev)

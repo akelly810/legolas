@@ -1,5 +1,5 @@
 module mod_iv_state_vector
-  use mod_global_variables, only: dp
+  use mod_global_variables, only: dp, ic
   use mod_logging, only: logger, str
   use mod_settings, only: settings_t
   use mod_state_vector, only: state_vector_t
@@ -24,8 +24,7 @@ module mod_iv_state_vector
     integer :: num_components
     integer :: stride
 
-    real(dp), allocatable :: x0(:)
-    complex(dp), allocatable :: x0_cplx(:)  ! FIXME: properly handle real vs complex mixing..
+    complex(dp), allocatable :: x0(:)
 
     contains
       procedure, public :: initialise_components
@@ -156,35 +155,42 @@ module mod_iv_state_vector
 
     integer :: i, j, idx
 
-    ! FIXME: Think about this... move somewhere else?
-    allocate(self%x0(self%stride * N))
-
     ! Compute coefficients for each component
     do i = 1, self%num_components
       call self%components(i)%ptr%compute_coeffs(N, nodes)
     end do
+
+    allocate(self%x0(self%stride * N))
 
     ! Assembly of interleaved array into block format
     do i = 1, self%num_components  ! components
       do j = 1, 2                  ! c1 or c2
         idx = 2*(i - 1) + j        ! compute the offset in x0
         select case(j)
-          case(1)  ! c1
-            self%x0(idx : self%stride*N : self%stride) = self%components(i)%ptr%c1
-          case(2)  ! c2
-            self%x0(idx : self%stride*N : self%stride) = self%components(i)%ptr%c2
+        case(1)
+          ! Multiply by i if needed
+          if (self%components(i)%ptr%cplx_trans) then
+            self%x0(idx : self%stride*N : self%stride) = &
+              cmplx(self%components(i)%ptr%c1, 0.0_dp, kind=dp) * ic
+          else
+            self%x0(idx : self%stride*N : self%stride) = &
+              cmplx(self%components(i)%ptr%c1, 0.0_dp, kind=dp)
+          end if          
+        case(2)
+          if (self%components(i)%ptr%cplx_trans) then
+            self%x0(idx : self%stride*N : self%stride) = &
+              cmplx(self%components(i)%ptr%c2, 0.0_dp, kind=dp) * ic
+          else
+            self%x0(idx : self%stride*N : self%stride) = &
+              cmplx(self%components(i)%ptr%c2, 0.0_dp, kind=dp)
+          end if
         end select
       end do
     end do
 
-    ! FIXME: For now, just hold 2 separate arrays.. one for real and one for complex
-    allocate(self%x0_cplx(self%stride * N))
-    self%x0_cplx = cmplx(self%x0, 0.0d0, kind = dp)
   end subroutine assemble_iv_array
 
 
-  !>
-  !!
   subroutine reassemble_from_block(self, N_fine, x_fine, N, nodes)
     class(iv_state_vector_t), intent(inout) :: self
     !> Number of grid points for reassembly
@@ -226,9 +232,17 @@ module mod_iv_state_vector
         idx = 2*(i - 1) + j  ! offset in the x0 array
         select case (j)
           case(1)  ! c1
-            self%components(i)%ptr%c1 = self%x0(idx : self%stride*N : self%stride)
+            if (self%components(i)%ptr%cplx_trans) then
+              self%components(i)%ptr%c1 = real(self%x0(idx : self%stride*N : self%stride) / ic)
+            else
+              self%components(i)%ptr%c1 = real(self%x0(idx : self%stride*N : self%stride))
+            end if
           case(2)  ! c2
-            self%components(i)%ptr%c2 = self%x0(idx : self%stride*N : self%stride)
+            if (self%components(i)%ptr%cplx_trans) then
+              self%components(i)%ptr%c2 = real(self%x0(idx : self%stride*N : self%stride) / ic)
+            else
+              self%components(i)%ptr%c2 = real(self%x0(idx : self%stride*N : self%stride))
+            end if
         end select
       end do
     end do

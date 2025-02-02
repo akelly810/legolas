@@ -71,7 +71,7 @@ contains
     type(matrix_t), intent(in) :: matrix_B
 
     ! Now call the solver
-    call solve(matrix_A, matrix_B, self%state_vec%x0_cplx, self%settings, self%snapshots)
+    call solve(matrix_A, matrix_B, self%state_vec%x0, self%settings, self%snapshots)
     
   end subroutine solve_ivp
 
@@ -95,10 +95,9 @@ contains
     iv_grid = linspace(self%settings%grid%get_grid_start(), self%settings%grid%get_grid_end(), N_fine)
 
     ! 1. Update the state vector
-    self%state_vec%x0_cplx = self%snapshots(:, i_snap)
-    self%state_vec%x0 = real(self%state_vec%x0_cplx)
+    self%state_vec%x0 = self%snapshots(:, i_snap)
 
-    ! 2. Re-compute c1, c2 from x0_cplx
+    ! 2. Re-compute c1, c2 from x0
     call self%state_vec%disassemble_iv_array(self%settings%grid%get_gridpts())
 
     ! 3. Reconstruct
