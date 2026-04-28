@@ -78,6 +78,7 @@ namelist_items = {
         ("sigma", (int, np.integer, float, complex)),
         ("ncv", (int, np.integer)),
         ("tolerance", (int, np.integer, float)),
+        ("skip_evp", bool),
     ],
     "ivplist": [
         ("enabled", bool),

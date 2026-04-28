@@ -162,10 +162,11 @@ contains
     integer :: number_of_eigenvalues, maxiter, ncv
     real(dp) :: tolerance
     complex(dp) :: sigma
+    logical :: skip_evp
 
     namelist /solvelist/ &
       solver, arpack_mode, which_eigenvalues, number_of_eigenvalues, &
-      maxiter, ncv, tolerance, sigma
+      maxiter, ncv, tolerance, sigma, skip_evp
 
     ! get defaults
     solver = settings%solvers%get_solver()
@@ -176,6 +177,7 @@ contains
     ncv = settings%solvers%ncv
     tolerance = settings%solvers%tolerance
     sigma = settings%solvers%sigma
+    skip_evp = settings%solvers%skip_evp
 
     read(unit, nml=solvelist, iostat=iostat, iomsg=iomsg)
     call parse_io_info(iostat, iomsg)
@@ -188,6 +190,7 @@ contains
     settings%solvers%ncv = ncv
     settings%solvers%tolerance = tolerance
     settings%solvers%sigma = sigma
+    settings%solvers%skip_evp = skip_evp
   end subroutine read_solvelist
 
 

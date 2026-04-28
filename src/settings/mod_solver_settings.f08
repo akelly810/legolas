@@ -7,6 +7,7 @@ module mod_solver_settings
   type, public :: solver_settings_t
     character(:), allocatable, private :: solver
     character(:), allocatable, private :: arpack_mode
+    logical, public :: skip_evp
     integer :: number_of_eigenvalues
     character(len=2) :: which_eigenvalues
     integer :: maxiter
@@ -34,6 +35,7 @@ contains
 
     call solver_settings%set_solver("QR-invert")
     call solver_settings%set_arpack_mode("general")
+    solver_settings%skip_evp = .false.
     solver_settings%number_of_eigenvalues = 10
     solver_settings%which_eigenvalues = "LM"
     ! these two get determined at runtime
