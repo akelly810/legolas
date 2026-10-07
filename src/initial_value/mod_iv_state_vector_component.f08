@@ -15,7 +15,7 @@ module mod_iv_state_vector_component
     logical :: is_bound = .false.
     logical :: cplx_trans = .false.
 
-    real(dp), allocatable :: c1(:), c2(:)   ! coefficients
+    complex(dp), allocatable :: c1(:), c2(:)   ! coefficients
     complex(dp), allocatable :: profile(:)  ! profile on grid
 
     ! Callback procedure pointers for profile function & derivative
