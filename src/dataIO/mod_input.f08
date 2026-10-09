@@ -460,7 +460,7 @@ contains
         if (n_steps < 1) call logger%error("ivplist: n_steps must be at least 1")
         settings%iv%n_steps = n_steps
       end if
-      settings%iv%dt = t_end / real(settings%iv%n_steps, dp)
+      settings%iv%dt = 0.0_dp
     end if
 
     ! snapshot spacing
@@ -469,7 +469,7 @@ contains
     end if
     if (snapshot_dt /= unset) then
       if (snapshot_dt <= 0.0_dp) call logger%error("ivplist: snapshot_dt must be positive")
-      settings%iv%snapshot_stride = max(1, nint(snapshot_dt / settings%iv%dt))
+      settings%iv%snapshot_stride = max(1, nint(snapshot_dt / settings%iv%get_step_size()))
       if (abs(settings%iv%get_snapshot_interval() - snapshot_dt) > tol * snapshot_dt) then
         call logger%info( &
           "ivplist: snapshot_dt is not a whole number of steps, snapshots every t = " &

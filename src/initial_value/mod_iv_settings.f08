@@ -9,7 +9,7 @@ module mod_iv_settings
 
     ! Solver params
     real(dp) :: t_end
-    real(dp) :: dt
+    real(dp) :: dt  ! fixed time step if > 0, otherwise t_end / n_steps
     integer :: n_steps
     real(dp) :: alpha
 
@@ -36,20 +36,24 @@ contains
 
     iv_settings%t_end = 0.1_dp
     iv_settings%n_steps = 500
-    iv_settings%dt = iv_settings%t_end / real(iv_settings%n_steps, dp)
+    iv_settings%dt = 0.0_dp
   end function new_iv_settings
 
 
   pure real(dp) function get_step_size(self)
     class(iv_settings_t), intent(in) :: self
-    get_step_size = self%dt
+    if (self%dt > 0.0_dp) then
+      get_step_size = self%dt
+    else
+      get_step_size = self%t_end / real(self%n_steps, dp)
+    end if
   end function get_step_size
 
 
   !> Time of the last step, n_steps * dt; at most one step past t_end.
   pure real(dp) function get_end_time(self)
     class(iv_settings_t), intent(in) :: self
-    get_end_time = self%n_steps * self%dt
+    get_end_time = self%n_steps * self%get_step_size()
   end function get_end_time
 
 
@@ -62,7 +66,7 @@ contains
 
   pure real(dp) function get_snapshot_interval(self)
     class(iv_settings_t), intent(in) :: self
-    get_snapshot_interval = self%snapshot_stride * self%dt
+    get_snapshot_interval = self%snapshot_stride * self%get_step_size()
   end function get_snapshot_interval
 
 end module mod_iv_settings
