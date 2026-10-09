@@ -86,7 +86,7 @@ contains
 
     ! Figure out how many snapshots to store
     if (present(snapshots)) then
-      num_save = floor(real((num_steps - 1))/real(save_stride)) + 2
+      num_save = settings%iv%get_n_snapshots()
       if (size(snapshots, dim=1) /= n .or. size(snapshots, dim=2) < num_save) then
         call logger%error("hist array not allocated or too small to store snapshots.")
         return
