@@ -393,7 +393,8 @@ class LegolasHeader:
 
         # the grid the profiles are evaluated on (npts values)
         offset_iv_grid = istream.tell()
-        # Data block start: the snapshot times, then nsnap * nfields * ncomp * npts values
+        # Data block start: the snapshot times, then
+        # nsnap * nfields * ncomp * npts values
         offset_iv_data = offset_iv_grid + npts * SIZE_DOUBLE
         bytes_to_skip = (nsnap + nsnap * nfields * ncomp * npts) * SIZE_DOUBLE
         istream.seek(offset_iv_data + bytes_to_skip)

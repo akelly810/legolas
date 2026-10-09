@@ -14,8 +14,8 @@ class IVPSolution:
     Container for IVP snapshot data returned by Legolas.
 
     Legolas evolves the complex profiles :math:`F(x, t)` of the perturbation
-    :math:`\\mathrm{Re}[F(x, t)\\,e^{i(k_2 u + k_3 v)}]`, where :math:`(u, v)` are the two
-    ignorable coordinates: :math:`(y, z)` in Cartesian and :math:`(\\theta, z)` in
+    :math:`\\mathrm{Re}[F(x, t)\\,e^{i(k_2 u + k_3 v)}]`, where :math:`(u, v)` are the
+    two ignorable coordinates: :math:`(y, z)` in Cartesian and :math:`(\\theta, z)` in
     cylindrical geometry. :meth:`get_component` returns :math:`F`; :meth:`reconstruct`
     evaluates the physical perturbation on a grid in the ignorable directions.
 
@@ -64,7 +64,8 @@ class IVPSolution:
     def reconstruct(self, component, snapshot, coord2=0.0, coord3=0.0, squeeze=True):
         """
         Evaluates the perturbation :math:`\\mathrm{Re}[F(x, t)\\,e^{i(k_2 u + k_3 v)}]`
-        of a component on the grid spanned by ``x_domain`` and the ignorable coordinates.
+        of a component on the grid spanned by ``x_domain`` and the ignorable
+        coordinates.
 
         Parameters
         ----------
@@ -91,7 +92,11 @@ class IVPSolution:
         v = np.atleast_1d(np.asarray(coord3, dtype=float))
         phase = np.exp(1j * (self.k2 * u[:, None] + self.k3 * v[None, :]))
         field = np.real(profile[:, None, None] * phase[None, :, :])
-        return np.squeeze(field, axis=tuple(i for i in (1, 2) if field.shape[i] == 1)) if squeeze else field
+        return (
+            np.squeeze(field, axis=tuple(i for i in (1, 2) if field.shape[i] == 1))
+            if squeeze
+            else field
+        )
 
     def _scale_component_array(self, component, comp_array):
         """Returns ``comp_array`` scaled to physical (cgs) units."""

@@ -8,7 +8,8 @@ from .conftest import utils
 
 @pytest.fixture
 def plane_wave():
-    """F(x) = g(x) e^{i phi0} for rho, a different profile for v1, with k2 = 0.5 and k3 = 2."""
+    """F(x) = g(x) e^{i phi0} for rho and a different profile for v1;
+    k2 = 0.5, k3 = 2."""
     x = np.linspace(0, 1, 11)
     times = np.array([0.0, 0.1, 0.2])
     phi0 = 0.3
@@ -17,7 +18,13 @@ def plane_wave():
     v1 = np.array([1j * x * (1 + i) for i in range(3)])
     data = np.stack([rho, v1], axis=1)
     sol = IVPSolution(
-        times, data, {0: "rho", 1: "v1"}, x_domain=x, k2=0.5, k3=2.0, geometry="Cartesian"
+        times,
+        data,
+        {0: "rho", 1: "v1"},
+        x_domain=x,
+        k2=0.5,
+        k3=2.0,
+        geometry="Cartesian",
     )
     return sol, x, g, phi0
 
@@ -56,7 +63,11 @@ def test_reconstruct_follows_the_fourier_ansatz(plane_wave):
     z = np.array([0.0, 0.25, 1.0])
     field = sol.reconstruct("rho", 2, coord2=y, coord3=z)
     assert field.shape == (11, 7, 3)
-    expected = 3 * g[:, None, None] * np.cos(0.5 * y[None, :, None] + 2.0 * z[None, None, :] + phi0)
+    expected = (
+        3
+        * g[:, None, None]
+        * np.cos(0.5 * y[None, :, None] + 2.0 * z[None, None, :] + phi0)
+    )
     assert np.allclose(field, expected)
 
 
@@ -73,7 +84,9 @@ def test_reconstruct_accepts_a_time_and_keeps_axes(plane_wave):
     sol = plane_wave[0]
     field = sol.reconstruct("rho", 0.21, coord2=1.0, coord3=np.zeros(4), squeeze=False)
     assert field.shape == (11, 1, 4)
-    assert np.allclose(field[:, 0, :], sol.reconstruct("rho", 2, coord2=1.0, coord3=np.zeros(4)))
+    assert np.allclose(
+        field[:, 0, :], sol.reconstruct("rho", 2, coord2=1.0, coord3=np.zeros(4))
+    )
 
 
 def test_snapshots_from_datfile():
@@ -89,6 +102,8 @@ def test_snapshots_from_datfile():
     assert len(sol.times) == 5
     assert sol.times[-1] == pytest.approx(0.5)
     assert np.all(np.isfinite(rho))
-    field = sol.reconstruct("rho", 0.5, coord2=np.linspace(0, 1, 3), coord3=np.linspace(0, 1, 4))
+    field = sol.reconstruct(
+        "rho", 0.5, coord2=np.linspace(0, 1, 3), coord3=np.linspace(0, 1, 4)
+    )
     assert field.shape == (len(sol.x_domain), 3, 4)
     assert np.allclose(field[:, 0, 0], rho[-1].real)
