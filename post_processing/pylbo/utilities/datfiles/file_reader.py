@@ -212,6 +212,16 @@ class LegolasFileReader:
             return None
         return ef_index
 
+    def read_iv_snapshots_grid(self, header: LegolasHeader) -> np.ndarray:
+        """Reads the grid on which the initial-value snapshot profiles are evaluated."""
+        with open(self.datfile, "rb") as istream:
+            grid = read_float_from_istream(
+                istream,
+                amount=header["iv_snapshots_npoints"],
+                offset=header["offsets"]["iv_snapshots_grid"],
+            )
+        return np.asarray(grid, dtype=float)
+
     def read_iv_snapshots(self, header: LegolasHeader) -> tuple[np.ndarray, tuple]:
         """
         Reads the initial-value snapshots. Returns the data as a complex array of shape

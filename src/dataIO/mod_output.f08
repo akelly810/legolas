@@ -104,7 +104,7 @@ contains
     end if
     if (settings%io%write_matrices) call write_matrix_data(matrix_A, matrix_B)
     if (settings%io%write_iv_snapshots .and. settings%iv%enabled) then
-      call write_iv_snapshots(settings, iv_module)
+      call write_iv_snapshots(settings, grid, iv_module)
     end if
 
     close(dat_fh)
@@ -560,8 +560,9 @@ contains
   end function get_residual
 
 
-  subroutine write_iv_snapshots(settings, iv_module)
+  subroutine write_iv_snapshots(settings, grid, iv_module)
     type(settings_t), intent(in) :: settings
+    type(grid_t), intent(in) :: grid
     type(iv_module_t), intent(inout) :: iv_module
     integer :: i_snap, i_comp
     integer :: n_snap, n_points, n_comp
@@ -573,7 +574,7 @@ contains
     n_comp   = iv_module%state_vec%num_components
 
     ! Metadata: counts, the number of fields written per component (real part, imaginary part),
-    ! and the component names
+    ! the component names, and the grid the profiles are evaluated on
     write(dat_fh) n_snap
     write(dat_fh) n_points
     write(dat_fh) n_comp
@@ -584,6 +585,7 @@ contains
     end do
     write(dat_fh) len(names(1)), names
     deallocate(names)
+    write(dat_fh) grid%ef_grid
 
     ! Write snapshot times
     write(dat_fh) iv_module%snap_times

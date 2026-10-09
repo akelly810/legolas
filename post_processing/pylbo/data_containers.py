@@ -734,9 +734,7 @@ class LegolasDataSet(LegolasDataContainer):
         raw_data, times = self.filereader.read_iv_snapshots(self.header)
         component_names = dict(enumerate(self.header.data["iv_snapshots_names"]))
 
-        x_domain = np.linspace(
-            self.header.data["x_start"], self.header.data["x_end"], raw_data.shape[2]
-        )
+        x_domain = self.filereader.read_iv_snapshots_grid(self.header)
 
         self._ivp_solution = IVPSolution(
             times=np.asarray(times, dtype=float),

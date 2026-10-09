@@ -85,6 +85,7 @@ def test_snapshots_from_datfile():
     rho = sol.get_component("rho")
     assert np.iscomplexobj(rho)
     assert rho.shape == (len(sol.times), len(sol.x_domain))
+    assert np.allclose(sol.x_domain[::2], ds.grid)
     assert len(sol.times) == 5
     assert sol.times[-1] == pytest.approx(0.5)
     assert np.all(np.isfinite(rho))

@@ -391,9 +391,11 @@ class LegolasHeader:
         self.data["iv_snapshots_nfields"] = nfields
         self.data["iv_snapshots_names"] = list(names) if ncomp > 1 else [names]
 
+        # the grid the profiles are evaluated on (npts values)
+        offset_iv_grid = istream.tell()
         # Data block start: the snapshot times, then nsnap * nfields * ncomp * npts values
-        offset_iv_data = istream.tell()
+        offset_iv_data = offset_iv_grid + npts * SIZE_DOUBLE
         bytes_to_skip = (nsnap + nsnap * nfields * ncomp * npts) * SIZE_DOUBLE
         istream.seek(offset_iv_data + bytes_to_skip)
 
-        return {"iv_snapshots": offset_iv_data}
+        return {"iv_snapshots_grid": offset_iv_grid, "iv_snapshots": offset_iv_data}
