@@ -189,19 +189,21 @@ module mod_iv_state_vector
   ! -----------------------------------------------------------------
   ! Assemble IV array from profiles
   ! -----------------------------------------------------------------
-  subroutine assemble_iv_array(self, N, nodes)
+  subroutine assemble_iv_array(self, N, nodes, deps)
     !>
     class(iv_state_vector_t), intent(inout) :: self
     !> Number of grid points
     integer, intent(in) :: N
     !> Array of grid points
     real(dp), intent(in) :: nodes(N)
+    !> Derivative of the scale factor (0 in Cartesian, 1 in cylindrical geometry)
+    real(dp), intent(in) :: deps
 
     integer :: i, j, idx
 
     ! Compute coefficients for each component
     do i = 1, self%num_components
-      call self%components(i)%ptr%compute_coeffs(N, nodes)
+      call self%components(i)%ptr%compute_coeffs(N, nodes, deps)
     end do
 
     allocate(self%x0(self%stride * N))
