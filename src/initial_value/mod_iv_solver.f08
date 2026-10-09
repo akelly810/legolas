@@ -13,6 +13,7 @@ module mod_iv_solver
   use mod_linear_systems, only: solve_linear_system_complex_banded_LU, &
     get_LU_factorisation_banded
   use mod_transform_matrix, only: matrix_to_banded
+  use, intrinsic :: ieee_arithmetic, only: ieee_is_finite
   implicit none
 
 contains
@@ -137,6 +138,13 @@ contains
 
       ! Solve using pre-factorised LU (avoids re-factorising the constant M each step)
       x = solve_linear_system_complex_banded_LU(M, rhs, M_LU, M_ipiv)
+
+      if (.not. (all(ieee_is_finite(real(x))) .and. all(ieee_is_finite(aimag(x))))) then
+        call logger%error( &
+          "initial value solver: non-finite solution at step " // str(i) // " of " // str(num_steps) &
+          // " (t = " // str(i * dt) // "); try a smaller time step or a larger alpha" &
+        )
+      end if
 
       ! Save in history
       if (present(snapshots)) then
